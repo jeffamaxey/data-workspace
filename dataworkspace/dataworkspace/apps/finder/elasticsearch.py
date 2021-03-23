@@ -34,11 +34,7 @@ class ElasticsearchClient:
 
             credentials = boto3.Session().get_credentials()
             self._aws_auth = AWS4Auth(
-                credentials.access_key,
-                credentials.secret_key,
-                region,
-                'es',
-                session_token=credentials.token,
+                credentials.access_key, credentials.secret_key, region, 'es',
             )
             self._client = Elasticsearch(
                 hosts=[
