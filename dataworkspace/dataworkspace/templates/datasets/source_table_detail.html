@@ -1,0 +1,30 @@
+{% extends '_main.html' %}
+{% load static core_tags %}
+{% block page_title %}View {{ source_object.name }} - {{ block.super }}{% endblock %}
+{% block go_back %}
+  <a class="govuk-back-link" href="{% url "datasets:dataset_detail" dataset_uuid=source_table.dataset.id %}#{{ source_table.dataset.slug }}">
+    Back
+  </a>
+{% endblock %}
+{% block footer_scripts %}
+  <script nonce="{{ request.csp_nonce }}" src="{% static 'source-table-data-grid.js' %}"></script>
+  {{ source_table.column_config|json_script:"column_data" }}
+  <script nonce="{{ request.csp_nonce }}">
+    window.initDataGrid(
+        '<url>',
+        JSON.parse(document.getElementById('column_data').textContent),
+    );
+  </script>
+{% endblock footer_scripts %}
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <h1 class="govuk-heading-xl">{{ source_table.name }}</h1>
+      <div class="govuk-body">Filter, sort and download your data below.</div>
+    </div>
+  </div>
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+    </div>
+  </div>
+{% endblock %}

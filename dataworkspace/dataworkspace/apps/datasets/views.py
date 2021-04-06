@@ -1220,3 +1220,30 @@ class RelatedDataView(View):
             )
 
         return HttpResponse(status=500)
+
+
+class SourceTableDetailView(DetailView):
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            SourceTable,
+            dataset__id=self.kwargs.get('dataset_uuid'),
+            id=self.kwargs.get('table_uuid'),
+            **{'published': True} if not self.request.user.is_superuser else {},
+        )
+
+    def get(self, request, *args, **kwargs):
+        source_table = self.get_object()
+        if (
+            not source_table.dataset.user_has_access(self.request.user)
+            or not source_table.reporting_enabled
+        ):
+            return HttpResponseForbidden()
+
+        return render(
+            request,
+            'datasets/source_table_detail.html',
+            {
+                'source_table': source_table,
+                'can_download': source_table.can_show_link_for_user(self.request.user),
+            },
+        )

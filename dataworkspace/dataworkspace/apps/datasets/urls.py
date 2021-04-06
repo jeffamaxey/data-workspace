@@ -70,4 +70,9 @@ urlpatterns = [
         login_required(views.RelatedDataView.as_view()),
         name='related_data',
     ),
+    path(
+        '<uuid:dataset_uuid>/table/<uuid:table_uuid>/grid',
+        login_required(views.SourceTableDetailView.as_view()),
+        name='source_table_detail',
+    ),
 ]
