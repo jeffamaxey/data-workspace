@@ -522,6 +522,11 @@ class SourceTable(BaseSource):
             "even if they haven’t been explicitly granted access?"
         ),
     )
+    reporting_enabled = models.BooleanField(
+        default=False,
+        help_text='Allow users to filter, sort and export data from within the browser',
+    )
+    column_config = JSONField(blank=True, null=True)
 
     class Meta:
         db_table = 'app_sourcetable'

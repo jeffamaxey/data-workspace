@@ -628,6 +628,45 @@ class SourceTableForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['dataset'].queryset = MasterDataset.objects.live()
 
+    def clean_column_config(self):
+        if self.cleaned_data['column_config'] is None:
+            return None
+
+        # Ensure column config is a dict
+        if not isinstance(self.cleaned_data['column_config'], list):
+            raise forms.ValidationError(
+                'Column config must be a list of column definitions'
+            )
+
+        # Ensure each item in the config has the required fields
+        default_sort_set = False
+        for column in self.cleaned_data['column_config']:
+            if not isinstance(column, dict):
+                raise forms.ValidationError(
+                    'All items in the config must be json objects'
+                )
+            if 'field' not in column:
+                raise forms.ValidationError(
+                    'Each config item must contain a `field` identifier'
+                )
+            if column.get('sort_by', False):
+                default_sort_set = True
+        if not default_sort_set:
+            raise forms.ValidationError('At least one field must be set as `sort_by`')
+        return self.cleaned_data['column_config']
+
+    def clean(self):
+        cleaned = self.cleaned_data
+        if (
+            'column_config' in cleaned
+            and cleaned['reporting_enabled']
+            and cleaned['column_config'] is None
+        ):
+            raise forms.ValidationError(
+                {'column_config': 'This field is required if reporting is enabled'}
+            )
+        return cleaned
+
 
 class VisualisationCatalogueItemForm(forms.ModelForm):
     eligibility_criteria = DynamicArrayField(
