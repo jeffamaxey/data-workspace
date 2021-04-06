@@ -522,6 +522,11 @@ class SourceTable(BaseSource):
             "even if they haven’t been explicitly granted access?"
         ),
     )
+    reporting_enabled = models.BooleanField(
+        default=False,
+        help_text='Allow users to filter, sort and export data from within the browser',
+    )
+    column_config = JSONField(blank=True, null=True)
 
     class Meta:
         db_table = 'app_sourcetable'
@@ -530,7 +535,7 @@ class SourceTable(BaseSource):
         return f'{self.name} ({self.id})'
 
     def can_show_link_for_user(self, user):
-        return False
+        return user.is_superuser
 
     @property
     def type(self):
@@ -1247,7 +1252,6 @@ class ReferenceDataset(DeletableTimestampedUserModel):
                 'field': field.column_name,
                 'sortable': True,
                 'filter': 'agTextColumnFilter',
-                'floatingFilter': True,
             }
             if field.data_type in [
                 field.DATA_TYPE_INT,

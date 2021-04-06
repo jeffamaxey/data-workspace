@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta, date
 import random
 from urllib.parse import quote_plus
@@ -2214,3 +2215,378 @@ class TestRelatedDataView:
         assert response.status_code == 200
         assert len(response.context["related_data"]) == 5
         assert all(datacut.name in body for datacut in datacuts)
+
+
+class TestSourceTableDataView:
+    def _get_url(self, source_table):
+        return reverse(
+            'datasets:source_table_data',
+            args=(source_table.dataset.id, source_table.id),
+        )
+
+    def _create_source_table(self):
+        with psycopg2.connect(
+            database_dsn(settings.DATABASES_DATA['my_database'])
+        ) as conn, conn.cursor() as cursor:
+            cursor.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS source_data_test (
+                    id UUID primary key,
+                    name VARCHAR(255),
+                    num NUMERIC,
+                    date DATE
+                );
+                TRUNCATE TABLE source_data_test;
+                INSERT INTO source_data_test
+                VALUES('896b4dde-f787-41be-a7bf-82be91805f24', 'the first record', 1, NULL);
+                INSERT INTO source_data_test
+                VALUES('488d06b6-032b-467a-b2c5-2820610b0ca6', 'the second record', 2, '2019-01-01');
+                INSERT INTO source_data_test
+                VALUES('a41da88b-ffa3-4102-928c-b3937fa5b58f', 'the last record', NULL, '2020-01-01');
+                '''
+            )
+        dataset = factories.DataSetFactory(
+            user_access_type='REQUIRES_AUTHENTICATION', published=True
+        )
+        return factories.SourceTableFactory(
+            dataset=dataset,
+            schema='public',
+            table='source_data_test',
+            database=factories.DatabaseFactory(memorable_name='my_database'),
+            reporting_enabled=True,
+            column_config=[
+                {
+                    'field': 'id',
+                    'filter': True,
+                    'dataType': 'uuid',
+                    'sortable': True,
+                    'primaryKey': True,
+                },
+                {'field': 'name', 'filter': True, 'sortable': True},
+                {
+                    'field': 'num',
+                    'filter': True,
+                    'dataType': 'numeric',
+                    'sortable': True,
+                },
+                {
+                    'field': 'date',
+                    'filter': True,
+                    'dataType': 'date',
+                    'sortable': True,
+                },
+            ],
+        )
+
+    @pytest.mark.django_db
+    def test_download_reporting_disabled(self, client):
+        source_table = self._create_source_table()
+        source_table.reporting_enabled = False
+        source_table.save()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={'columns': ['id', 'name', 'num', 'date']},
+        )
+        assert response.status_code == 403
+
+    @pytest.mark.django_db
+    def test_download_no_filters_or_sort(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={'columns': ['id', 'name', 'num', 'date']},
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"id","name","num","date"\r\n'
+            b'488d06b6-032b-467a-b2c5-2820610b0ca6,"the second record",2,"2019-01-01"\r\n'
+            b'896b4dde-f787-41be-a7bf-82be91805f24,"the first record",1,""\r\n'
+            b'a41da88b-ffa3-4102-928c-b3937fa5b58f,"the last record","","2020-01-01"\r\n'
+            b'"Number of rows: 3"\r\n'
+        )
+
+    @pytest.mark.django_db
+    def test_download_specific_columns(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={'columns': ['name', 'num']},
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"name","num"\r\n'
+            b'"the first record",1\r\n'
+            b'"the last record",""\r\n'
+            b'"the second record",2\r\n'
+            b'"Number of rows: 3"\r\n'
+        )
+
+    @pytest.mark.django_db
+    def test_download_no_columns(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            # data={'columns': ['name', 'num']},
+        )
+        assert response.status_code == 400
+
+    @pytest.mark.django_db
+    def test_download_sort(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={'columns': ['name', 'num'], 'sortField': 'num', 'sortDir': 'DESC'},
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"name","num"\r\n'
+            b'"the last record",""\r\n'
+            b'"the second record",2\r\n'
+            b'"the first record",1\r\n'
+            b'"Number of rows: 3"\r\n'
+        )
+
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={'columns': ['name', 'num'], 'sortField': 'num', 'sortDir': 'ASC'},
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"name","num"\r\n'
+            b'"the first record",1\r\n'
+            b'"the second record",2\r\n'
+            b'"the last record",""\r\n'
+            b'"Number of rows: 3"\r\n'
+        )
+
+    @pytest.mark.django_db
+    def test_contains_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'name': {
+                                'filter': 'last',
+                                'filterType': 'text',
+                                'type': 'contains',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert (
+            b''.join(response.streaming_content)
+            == b'"name","num","date"\r\n"the last record","","2020-01-01"\r\n"Number of rows: 1"\r\n'
+        )
+
+    @pytest.mark.django_db
+    def test_not_contains_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'name': {
+                                'filter': 'last',
+                                'filterType': 'text',
+                                'type': 'notContains',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"name","num","date"\r\n"the first record",1,""\r\n'
+            b'"the second record",2,"2019-01-01"\r\n'
+            b'"Number of rows: 2"\r\n'
+        )
+
+    def test_equals_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'date': {
+                                'dateFrom': '2019-01-01 00:00:00',
+                                'dateTo': None,
+                                'filterType': 'date',
+                                'type': 'equals',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"name","num","date"\r\n"the second record",2,"2019-01-01"\r\n"Number of rows: 1"\r\n'
+        )
+
+    def test_not_equals_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'date': {
+                                'dateFrom': '2019-01-01 00:00:00',
+                                'dateTo': None,
+                                'filterType': 'date',
+                                'type': 'notEqual',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"name","num","date"\r\n"the first record",1,""\r\n'
+            b'"the last record","","2020-01-01"\r\n'
+            b'"Number of rows: 2"\r\n'
+        )
+
+    def test_starts_with_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'name': {
+                                'filter': 'the last',
+                                'filterType': 'text',
+                                'type': 'startsWith',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert (
+            b''.join(response.streaming_content)
+            == b'"name","num","date"\r\n"the last record","","2020-01-01"\r\n"Number of rows: 1"\r\n'
+        )
+
+    def test_ends_with_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'name': {
+                                'filter': 'first record',
+                                'filterType': 'text',
+                                'type': 'endsWith',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert (
+            b''.join(response.streaming_content)
+            == b'"name","num","date"\r\n"the first record",1,""\r\n"Number of rows: 1"\r\n'
+        )
+
+    def test_range_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'date': {
+                                'dateFrom': '2018-12-31 00:00:00',
+                                'dateTo': '2019-01-03 00:00:00',
+                                'filterType': 'date',
+                                'type': 'inRange',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert (
+            b''.join(response.streaming_content)
+            == b'"name","num","date"\r\n"the second record",2,"2019-01-01"\r\n"Number of rows: 1"\r\n'
+        )
+
+    def test_less_than_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'date': {
+                                'dateFrom': '2019-12-31 00:00:00',
+                                'dateTo': None,
+                                'filterType': 'date',
+                                'type': 'lessThan',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert (
+            b''.join(response.streaming_content)
+            == b'"name","num","date"\r\n"the second record",2,"2019-01-01"\r\n"Number of rows: 1"\r\n'
+        )
+
+    def test_greater_than_filter(self, client):
+        source_table = self._create_source_table()
+        response = client.post(
+            self._get_url(source_table) + '?download=1',
+            data={
+                'columns': ['name', 'num', 'date'],
+                'filters': [
+                    json.dumps(
+                        {
+                            'date': {
+                                'dateFrom': '2019-12-31 00:00:00',
+                                'dateTo': None,
+                                'filterType': 'date',
+                                'type': 'greaterThan',
+                            }
+                        }
+                    )
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert b''.join(response.streaming_content) == (
+            b'"name","num","date"\r\n"the last record","","2020-01-01"\r\n"Number of rows: 1"\r\n'
+        )
