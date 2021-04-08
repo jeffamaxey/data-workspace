@@ -535,7 +535,7 @@ class SourceTable(BaseSource):
         return f'{self.name} ({self.id})'
 
     def can_show_link_for_user(self, user):
-        return False
+        return user.is_superuser
 
     @property
     def type(self):
@@ -1252,7 +1252,6 @@ class ReferenceDataset(DeletableTimestampedUserModel):
                 'field': field.column_name,
                 'sortable': True,
                 'filter': 'agTextColumnFilter',
-                'floatingFilter': True,
             }
             if field.data_type in [
                 field.DATA_TYPE_INT,

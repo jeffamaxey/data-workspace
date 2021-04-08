@@ -8,6 +8,7 @@ import json
 from typing import Set
 
 import boto3
+import psycopg2
 import waffle
 from botocore.exceptions import ClientError
 from csp.decorators import csp_update
@@ -37,16 +38,19 @@ from django.http import (
     HttpResponseNotFound,
     HttpResponseRedirect,
     HttpResponseServerError,
+    JsonResponse,
 )
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.generic import DetailView, View
+from psycopg2.sql import Identifier, SQL
 
 from dataworkspace import datasets_db
 from dataworkspace.apps.datasets.constants import DataSetType, DataLinkType
 from dataworkspace.apps.core.utils import (
     StreamingHttpResponseWithoutDjangoDbConnection,
+    database_dsn,
     streaming_query_response,
     table_data,
     view_exists,
@@ -1220,3 +1224,168 @@ class RelatedDataView(View):
             )
 
         return HttpResponse(status=500)
+
+
+class SourceTableDetailView(DetailView):
+    def _user_can_access(self, source_table):
+        return (
+            source_table.dataset.user_has_access(self.request.user)
+            and source_table.reporting_enabled
+        )
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            SourceTable,
+            dataset__id=self.kwargs.get('dataset_uuid'),
+            id=self.kwargs.get('table_uuid'),
+            **{'published': True} if not self.request.user.is_superuser else {},
+        )
+
+    def get(self, request, *args, **kwargs):
+        source_table = self.get_object()
+        if not self._user_can_access(source_table):
+            return HttpResponseForbidden()
+
+        return render(
+            request,
+            'datasets/source_table_detail.html',
+            {
+                'source_table': source_table,
+                'can_download': source_table.can_show_link_for_user(self.request.user),
+            },
+        )
+
+
+class SourceTableDataView(SourceTableDetailView):
+    def _get_rows(self, source_table, sql, query_params):
+        with psycopg2.connect(
+            database_dsn(settings.DATABASES_DATA[source_table.database.memorable_name])
+        ) as connection:
+            with connection.cursor(
+                name='source-table-grid-data',
+                cursor_factory=psycopg2.extras.RealDictCursor,
+            ) as cursor:
+                cursor.execute(sql, query_params)
+                return cursor.fetchall()
+
+    def post(self, request, *args, **kwargs):
+        source_table = self.get_object()
+        if not self._user_can_access(source_table):
+            return JsonResponse({}, status=403)
+
+        column_config = source_table.column_config
+        columns = [x['field'] for x in column_config]
+
+        post_data = json.loads(request.body.decode('utf-8'))
+        query_params = {
+            'offset': int(post_data.get('start', 0)),
+            'limit': int(post_data.get('limit', 100)),
+        }
+        sort_dir = 'DESC' if post_data.get('sortDir', '').lower() == 'desc' else 'ASC'
+        sort_fields = [x['field'] for x in column_config if x.get('primaryKey')]
+        if post_data.get('sortField') and post_data.get('sortField') in columns:
+            sort_fields = [post_data.get('sortField')]
+
+        where_clause = []
+        for field, filter in post_data.get('filters', {}).items():
+            terms = [filter.get('filter'), filter.get('filterTo')]
+            if filter['filterType'] == 'date':
+                terms = [filter['dateFrom'], filter['dateTo']]
+
+            if field in columns:
+                if filter['type'] == 'contains':
+                    where_clause.append(
+                        SQL(f'lower({{}}) LIKE lower(%({field})s)').format(
+                            Identifier(field)
+                        )
+                    )
+                    query_params[field] = f'%{terms[0]}%'
+                elif filter['type'] == 'notContains':
+                    where_clause.append(
+                        SQL(f'lower({{}}) NOT LIKE lower(%({field})s)').format(
+                            Identifier(field)
+                        )
+                    )
+                    query_params[field] = f'%{terms[0]}%'
+                elif filter['type'] == 'equals':
+                    if filter['filterType'] == 'text':
+                        where_clause.append(
+                            SQL(f'lower({{}}) = lower(%({field})s)').format(
+                                Identifier(field)
+                            )
+                        )
+                    else:
+                        where_clause.append(
+                            SQL(f'{{}} = %({field})s').format(Identifier(field))
+                        )
+                    query_params[field] = terms[0]
+                elif filter['type'] == 'notEqual':
+                    if filter['filterType'] == 'text':
+                        where_clause.append(
+                            SQL(f'lower({{}}) != lower(%({field})s)').format(
+                                Identifier(field)
+                            )
+                        )
+                    else:
+                        where_clause.append(
+                            SQL(f'{{}} != %({field})s').format(Identifier(field))
+                        )
+                    query_params[field] = terms[0]
+                elif filter['type'] == 'startsWith':
+                    where_clause.append(
+                        SQL(f'lower({{}}) LIKE lower(%({field})s)').format(
+                            Identifier(field)
+                        )
+                    )
+                    query_params[field] = f'{terms[0]}%'
+                elif filter['type'] == 'endsWith':
+                    where_clause.append(
+                        SQL(f'lower({{}}) LIKE lower(%({field})s)').format(
+                            Identifier(field)
+                        )
+                    )
+                    query_params[field] = f'%{terms[0]}'
+                elif filter['type'] == 'inRange':
+                    where_clause.append(
+                        SQL(f'{{}} BETWEEN %({field}_from)s AND %({field}_to)s').format(
+                            Identifier(field)
+                        )
+                    )
+                    query_params[f'{field}_from'] = terms[0]
+                    query_params[f'{field}_to'] = terms[1]
+                elif filter['type'] == 'greaterThan':
+                    where_clause.append(
+                        SQL(f'{{}} > %({field})s').format(Identifier(field))
+                    )
+                    query_params[field] = terms[0]
+                elif filter['type'] == 'lessThan':
+                    where_clause.append(
+                        SQL(f'{{}} < %({field})s').format(Identifier(field))
+                    )
+                    query_params[field] = terms[0]
+        if where_clause:
+            where_clause.insert(0, SQL('WHERE'))
+
+        query = SQL(
+            f'''
+            SELECT {{}}
+            FROM {{}}.{{}}
+            {{}}
+            ORDER BY {{}} {sort_dir}
+            LIMIT %(limit)s 
+            OFFSET %(offset)s
+            '''
+        ).format(
+            SQL(',').join(map(Identifier, columns)),
+            Identifier(source_table.schema),
+            Identifier(source_table.table),
+            SQL(' ').join(where_clause),
+            SQL(',').join(map(Identifier, sort_fields)),
+        )
+
+        return JsonResponse(
+            {
+                'columns': column_config,
+                'records': self._get_rows(source_table, query, query_params),
+            }
+        )

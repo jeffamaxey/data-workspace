@@ -639,7 +639,7 @@ class SourceTableForm(forms.ModelForm):
             )
 
         # Ensure each item in the config has the required fields
-        default_sort_set = False
+        primary_key_set = False
         for column in self.cleaned_data['column_config']:
             if not isinstance(column, dict):
                 raise forms.ValidationError(
@@ -649,10 +649,12 @@ class SourceTableForm(forms.ModelForm):
                 raise forms.ValidationError(
                     'Each config item must contain a `field` identifier'
                 )
-            if column.get('sort_by', False):
-                default_sort_set = True
-        if not default_sort_set:
-            raise forms.ValidationError('At least one field must be set as `sort_by`')
+            if column.get('primaryKey', False):
+                primary_key_set = True
+        if not primary_key_set:
+            raise forms.ValidationError(
+                'At least one field must be set as `primaryKey`'
+            )
         return self.cleaned_data['column_config']
 
     def clean(self):
