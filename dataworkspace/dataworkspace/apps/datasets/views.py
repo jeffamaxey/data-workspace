@@ -6,6 +6,7 @@ import io
 from itertools import chain
 import json
 from typing import Set
+from uuid import UUID
 
 import boto3
 import psycopg2
@@ -1274,16 +1275,16 @@ class SourceTableDataView(SourceTableDetailView):
             return JsonResponse({}, status=403)
 
         column_config = source_table.column_config
-        columns = [x['field'] for x in column_config]
+        column_map = {x['field']: x for x in column_config}
 
         post_data = json.loads(request.body.decode('utf-8'))
         query_params = {
             'offset': int(post_data.get('start', 0)),
-            'limit': int(post_data.get('limit', 100)),
+            'limit': min(int(post_data.get('limit', 100)), 100),
         }
         sort_dir = 'DESC' if post_data.get('sortDir', '').lower() == 'desc' else 'ASC'
         sort_fields = [x['field'] for x in column_config if x.get('primaryKey')]
-        if post_data.get('sortField') and post_data.get('sortField') in columns:
+        if post_data.get('sortField') and post_data.get('sortField') in column_map:
             sort_fields = [post_data.get('sortField')]
 
         where_clause = []
@@ -1292,23 +1293,40 @@ class SourceTableDataView(SourceTableDetailView):
             if filter['filterType'] == 'date':
                 terms = [filter['dateFrom'], filter['dateTo']]
 
-            if field in columns:
-                if filter['type'] == 'contains':
+            if field in column_map:
+                data_type = column_map[field].get('dataType', filter['filterType'])
+
+                # Searching on invalid uuids will raise an exception.
+                # To get around that, if the uuid is invalid we
+                # force the query to return no results (`where 1 = 2`)
+                if data_type == 'uuid':
+                    try:
+                        UUID(terms[0], version=4)
+                    except ValueError:
+                        where_clause.append(SQL('1 = 2'))
+                        break
+
+                # Booleans are passed as integers
+                if data_type == 'boolean':
+                    terms[0] = bool(int(terms[0]))
+
+                if data_type == 'text' and filter['type'] == 'contains':
+                    query_params[field] = f'%{terms[0]}%'
                     where_clause.append(
                         SQL(f'lower({{}}) LIKE lower(%({field})s)').format(
                             Identifier(field)
                         )
                     )
+                elif data_type == 'text' and filter['type'] == 'notContains':
                     query_params[field] = f'%{terms[0]}%'
-                elif filter['type'] == 'notContains':
                     where_clause.append(
                         SQL(f'lower({{}}) NOT LIKE lower(%({field})s)').format(
                             Identifier(field)
                         )
                     )
-                    query_params[field] = f'%{terms[0]}%'
                 elif filter['type'] == 'equals':
-                    if filter['filterType'] == 'text':
+                    query_params[field] = terms[0]
+                    if data_type == 'text':
                         where_clause.append(
                             SQL(f'lower({{}}) = lower(%({field})s)').format(
                                 Identifier(field)
@@ -1318,9 +1336,10 @@ class SourceTableDataView(SourceTableDetailView):
                         where_clause.append(
                             SQL(f'{{}} = %({field})s').format(Identifier(field))
                         )
-                    query_params[field] = terms[0]
+
                 elif filter['type'] == 'notEqual':
-                    if filter['filterType'] == 'text':
+                    query_params[field] = terms[0]
+                    if data_type == 'text':
                         where_clause.append(
                             SQL(f'lower({{}}) != lower(%({field})s)').format(
                                 Identifier(field)
@@ -1330,21 +1349,17 @@ class SourceTableDataView(SourceTableDetailView):
                         where_clause.append(
                             SQL(f'{{}} != %({field})s').format(Identifier(field))
                         )
-                    query_params[field] = terms[0]
-                elif filter['type'] == 'startsWith':
+                elif filter['type'] in ['startsWith', 'endsWith']:
+                    query_params[field] = (
+                        f'{terms[0]}%'
+                        if filter['type'] == 'startsWith'
+                        else f'%{terms[0]}'
+                    )
                     where_clause.append(
                         SQL(f'lower({{}}) LIKE lower(%({field})s)').format(
                             Identifier(field)
                         )
                     )
-                    query_params[field] = f'{terms[0]}%'
-                elif filter['type'] == 'endsWith':
-                    where_clause.append(
-                        SQL(f'lower({{}}) LIKE lower(%({field})s)').format(
-                            Identifier(field)
-                        )
-                    )
-                    query_params[field] = f'%{terms[0]}'
                 elif filter['type'] == 'inRange':
                     where_clause.append(
                         SQL(f'{{}} BETWEEN %({field}_from)s AND %({field}_to)s').format(
@@ -1353,18 +1368,21 @@ class SourceTableDataView(SourceTableDetailView):
                     )
                     query_params[f'{field}_from'] = terms[0]
                     query_params[f'{field}_to'] = terms[1]
-                elif filter['type'] == 'greaterThan':
+                elif filter['type'] in ['greaterThan', 'greaterThanOrEqual']:
+                    operator = '>' if filter['type'] == 'greaterThank' else '>='
                     where_clause.append(
-                        SQL(f'{{}} > %({field})s').format(Identifier(field))
+                        SQL(f'{{}} {operator} %({field})s').format(Identifier(field))
                     )
                     query_params[field] = terms[0]
-                elif filter['type'] == 'lessThan':
-                    where_clause.append(
-                        SQL(f'{{}} < %({field})s').format(Identifier(field))
-                    )
+                elif filter['type'] in ['lessThan', 'lessThanOrEqual']:
                     query_params[field] = terms[0]
+                    operator = '<' if filter['type'] == 'greaterThank' else '<='
+                    where_clause.append(
+                        SQL(f'{{}} {operator} %({field})s').format(Identifier(field))
+                    )
+
         if where_clause:
-            where_clause.insert(0, SQL('WHERE'))
+            where_clause = SQL('WHERE') + SQL(' AND ').join(where_clause)
 
         query = SQL(
             f'''
@@ -1376,7 +1394,7 @@ class SourceTableDataView(SourceTableDetailView):
             OFFSET %(offset)s
             '''
         ).format(
-            SQL(',').join(map(Identifier, columns)),
+            SQL(',').join(map(Identifier, column_map)),
             Identifier(source_table.schema),
             Identifier(source_table.table),
             SQL(' ').join(where_clause),
@@ -1384,8 +1402,5 @@ class SourceTableDataView(SourceTableDetailView):
         )
 
         return JsonResponse(
-            {
-                'columns': column_config,
-                'records': self._get_rows(source_table, query, query_params),
-            }
+            {'records': self._get_rows(source_table, query, query_params),}
         )

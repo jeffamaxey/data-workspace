@@ -1,10 +1,9 @@
 function getCookie(name) {
-  let cookieValue = null;
+  var cookieValue = null;
   if (document.cookie && document.cookie !== '') {
     const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
+    for (var i = 0; i < cookies.length; i++) {
       const cookie = cookies[i].trim();
-      // Does this cookie string begin with the name we want?
       if (cookie.substring(0, name.length + 1) === (name + '=')) {
         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
         break;
@@ -57,9 +56,7 @@ function getBooleanFilterComponent() {
     var that = this;
 
     function onSelectChanged() {
-      console.log('INPUT', that.eFilterInput);
       if (that.eFilterInput.value === '') {
-        // Remove the filter
         params.parentFilterInstance(function (instance) {
           instance.onFloatingFilterChanged(null, null);
         });
@@ -73,10 +70,10 @@ function getBooleanFilterComponent() {
     }
 
     this.eFilterInput.addEventListener('input', onSelectChanged);
+
   };
 
   BooleanFilterComponent.prototype.onParentModelChanged = function (parentModel) {
-    // When the filter is empty we will receive a null message her
     if (!parentModel) {
       this.eFilterInput.value = '';
       this.currentValue = null;
@@ -110,6 +107,11 @@ function initDataGrid(columnConfig, dataEndpoint, records, exportFileName) {
         suppressFilterButton: true
       };
     }
+    else if (column.dataType === 'uuid') {
+      column.filterParams = {
+        filterOptions: ['equals']
+      };
+    }
 
     // Set comparator for date fields
     // (we do this here so it works for both client-side and server-side rendering)
@@ -139,6 +141,7 @@ function initDataGrid(columnConfig, dataEndpoint, records, exportFileName) {
       booleanFloatingFilter: getBooleanFilterComponent(),
     }
   };
+
   if (dataEndpoint) {
     gridOptions.rowModelType = 'infinite';
     gridOptions.columnDefs[0].cellRenderer = 'loadingRenderer';
@@ -154,25 +157,28 @@ function initDataGrid(columnConfig, dataEndpoint, records, exportFileName) {
 
   if (dataEndpoint) {
     var initialDataLoaded = false;
+    var columnDataTypeMap = {};
+    for (var i=0; i<gridOptions.columnDefs.length; i++) {
+      columnDataTypeMap[gridOptions.columnDefs[i].field] = gridOptions.columnDefs[i].dataType;
+    }
     var dataSource = {
       rowCount: null,
       getRows: function (params) {
-        console.log('PARAMS', params);
-        console.log('asking for rows ' + params.startRow + ' to ' + params.endRow);
-        /*
-          TODO: Parse the params into sorting and filtering
-          query string and add to data endpoint url.
-         */
+        var filters = params.filterModel != null ? params.filterModel : {};
+        for (var key in filters) {
+          if (columnDataTypeMap[key] != null && columnDataTypeMap[key] != filters[key].filterType) {
+            filters[key].filterType = columnDataTypeMap[key];
+          }
+        }
         var qs = {
           start: params.startRow,
           limit: params.endRow - params.startRow,
-          filters: params.filterModel != null ? params.filterModel : {}
+          filters: filters
         };
         if (params.sortModel[0]) {
           qs['sortField'] = params.sortModel[0].colId;
           qs['sortDir'] = params.sortModel[0].sort;
         }
-
         var xhr = new XMLHttpRequest();
         xhr.open('POST', dataEndpoint, true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -186,9 +192,7 @@ function initDataGrid(columnConfig, dataEndpoint, records, exportFileName) {
                   response.records.length < (params.endRow - params.startRow) ? (params.startRow + response.records.length) : -1
               );
               if (!initialDataLoaded) {
-                gridOptions.columnApi.autoSizeColumns(
-                  gridOptions.columnApi.getAllGridColumns()
-                );
+                autoSizeColumns(gridOptions.columnApi);
                 initialDataLoaded = true;
               }
             }
