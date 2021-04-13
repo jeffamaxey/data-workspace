@@ -3398,7 +3398,7 @@ class TestDatasetAdminPytest:
                 'sourcetable_set-0-frequency': 1,
                 'sourcetable_set-0-table': 'test_table',
                 'sourcetable_set-0-reporting_enabled': 'on',
-                'sourcetable_set-0-column_config': '[{"field": "test", "sort_by": true}, []]',
+                'sourcetable_set-0-column_config': '[{"field": "test"}, []]',
             },
             follow=True,
         )
@@ -3441,7 +3441,7 @@ class TestDatasetAdminPytest:
                 'sourcetable_set-0-frequency': 1,
                 'sourcetable_set-0-table': 'test_table',
                 'sourcetable_set-0-reporting_enabled': 'on',
-                'sourcetable_set-0-column_config': '[{"field": "test", "sort_by": true}, {"sortable": false}]',
+                'sourcetable_set-0-column_config': '[{"field": "test"}, {"sortable": false}]',
             },
             follow=True,
         )
@@ -3454,7 +3454,7 @@ class TestDatasetAdminPytest:
         )
 
     @pytest.mark.django_db
-    def test_source_table_reporting_no_sort_by_set(self, staff_client):
+    def test_source_table_reporting_no_primary_key_set(self, staff_client):
         staff_client.post(reverse('admin:index'), follow=True)
         dataset = factories.MasterDataSetFactory.create(
             published=True, user_access_type='REQUIRES_AUTHORIZATION'
@@ -3482,15 +3482,16 @@ class TestDatasetAdminPytest:
                 'sourcetable_set-0-frequency': 1,
                 'sourcetable_set-0-table': 'test_table',
                 'sourcetable_set-0-reporting_enabled': 'on',
-                'sourcetable_set-0-column_config': '[{"field": "test", "sort_by": false}, {"field": "test2"}]',
+                'sourcetable_set-0-column_config': '[{"field": "test"}, {"field": "test2"}]',
             },
             follow=True,
         )
 
         assert response.status_code == 200
         assert SourceTable.objects.count() == num_tables
-        assert 'At least one field must be set as `sort_by`' in response.content.decode(
-            'utf-8'
+        assert (
+            'At least one field must be set as `primaryKey`'
+            in response.content.decode('utf-8')
         )
 
     @pytest.mark.django_db
@@ -3522,7 +3523,10 @@ class TestDatasetAdminPytest:
                 'sourcetable_set-0-frequency': 1,
                 'sourcetable_set-0-table': 'test_table',
                 'sourcetable_set-0-reporting_enabled': 'on',
-                'sourcetable_set-0-column_config': '[{"field": "test"}, {"field": "test2", "sort_by": true}]',
+                'sourcetable_set-0-column_config': (
+                    '[{"field": "test", "primaryKey": true}, '
+                    '{"field": "test2", "sort_by": true}]'
+                ),
             },
             follow=True,
         )
@@ -3558,10 +3562,11 @@ class TestDatasetAdminPytest:
                 'sourcetable_set-0-schema': 'test_schema',
                 'sourcetable_set-0-frequency': 1,
                 'sourcetable_set-0-table': 'test_table',
-                'sourcetable_set-0-column_config': '[{"field": "test", "sort_by": true}]',
+                'sourcetable_set-0-column_config': '[{"field": "test", "primaryKey": true}]',
             },
             follow=True,
         )
 
+        # raise Exception(response.content.decode('utf-8'))
         assert response.status_code == 200
         assert SourceTable.objects.count() == num_tables + 1
