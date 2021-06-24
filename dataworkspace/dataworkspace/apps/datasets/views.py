@@ -68,7 +68,6 @@ from dataworkspace.apps.core.utils import (
 )
 from dataworkspace.apps.datasets.constants import TagType
 from dataworkspace.apps.datasets.forms import (
-    DatasetSearchForm,
     DatasetSearchFormV2,
     EligibilityCriteriaForm,
     RequestAccessForm,
@@ -115,7 +114,6 @@ def get_datasets_data_for_user_matching_query(
     data_type=None,
     user=None,
     id_field='id',
-    search_testing_flag_active=False,
 ):
     """
     Filters the dataset queryset for:
@@ -234,9 +232,7 @@ def get_datasets_data_for_user_matching_query(
     if is_reference_query:
         datasets = datasets.annotate(
             purpose=Value(
-                DataSetType.DATACUT
-                if search_testing_flag_active
-                else DataSetType.REFERENCE,
+                DataSetType.DATACUT,
                 IntegerField(),
             )
         )
@@ -446,7 +442,6 @@ def _matches_filters(
     topic_flag_active,
     user_accessible: bool = False,
     user_inaccessible: bool = False,
-    search_testing_flag_active: bool = False,
 ):
     return (
         (not access or data['has_access'])
@@ -459,19 +454,13 @@ def _matches_filters(
             not topic_flag_active
             or (not topic_ids or topic_ids.intersection(set(data['topic_tag_ids'])))
         )
-        and (
-            not search_testing_flag_active
-            or (not user_accessible or data['has_access'])
-        )
-        and (
-            not search_testing_flag_active
-            or (not user_inaccessible or not data['has_access'])
-        )
+        and (not user_accessible or data['has_access'])
+        and (not user_inaccessible or not data['has_access'])
     )
 
 
 def sorted_datasets_and_visualisations_matching_query_for_user(
-    query, use, data_type, user, sort_by, search_testing_flag_active=False,
+    query, use, data_type, user, sort_by,
 ):
     """
     Retrieves all master datasets, datacuts, reference datasets and visualisations (i.e. searchable items)
@@ -486,7 +475,6 @@ def sorted_datasets_and_visualisations_matching_query_for_user(
         query,
         user=user,
         id_field='uuid',
-        search_testing_flag_active=search_testing_flag_active,
     )
 
     visualisations = get_visualisations_data_for_user_matching_query(
@@ -518,13 +506,7 @@ def has_unpublished_dataset_access(user):
 
 @require_GET
 def find_datasets(request):
-    search_testing_flag_active = waffle.flag_is_active(
-        request, settings.SEARCH_FILTERS_TESTING_FLAG
-    )
-    if search_testing_flag_active:
-        form = DatasetSearchFormV2(request.GET)
-    else:
-        form = DatasetSearchForm(request.GET)
+    form = DatasetSearchFormV2(request.GET)
 
     purposes = form.fields[
         'use'
@@ -532,7 +514,6 @@ def find_datasets(request):
 
     if form.is_valid():
         query = form.cleaned_data.get("q")
-        status = form.cleaned_data.get("status")
         unpublished = form.cleaned_data.get("unpublished")
         use = set(form.cleaned_data.get("use"))
         data_type = set(form.cleaned_data.get("data_type", []))
@@ -551,7 +532,6 @@ def find_datasets(request):
         data_type=data_type,
         user=request.user,
         sort_by=sort,
-        search_testing_flag_active=search_testing_flag_active,
     )
 
     # Filter out any records that don't match the selected filters. We do this in Python, not the DB, because we need
@@ -562,10 +542,7 @@ def find_datasets(request):
         filter(
             lambda d: _matches_filters(
                 d,
-                bool('access' in status),
-                bool('bookmark' in status)
-                if not search_testing_flag_active
-                else bookmarked,
+                bookmarked,
                 bool(unpublished),
                 use,
                 data_type,
@@ -574,7 +551,6 @@ def find_datasets(request):
                 waffle.flag_is_active(request, settings.FILTER_BY_TOPIC_FLAG),
                 user_accessible,
                 user_inaccessible,
-                search_testing_flag_active,
             ),
             all_datasets_visible_to_user_matching_query,
         )
