@@ -119,6 +119,7 @@ MIDDLEWARE = [
 
 if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
+    INSTALLED_APPS.append("webpack_loader")
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
 if ELASTIC_APM:
@@ -699,3 +700,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 TEAMS_DATA_WORKSPACE_COMMUNITY_URL = env.get("TEAMS_DATA_WORKSPACE_COMMUNITY_URL", "")
 DATA_WORKSPACE_ROADMAP_URL = env.get("DATA_WORKSPACE_ROADMAP_URL", "")
+
+WEBPACK_LOADER = {
+    "DEFAULT": {
+        "CACHE": not DEBUG,
+        "BUNDLE_DIR_NAME": "js/chart-builder/bundles/",
+        "STATS_FILE": "/tmp/stats/webpack-stats.json",
+    }
+}
