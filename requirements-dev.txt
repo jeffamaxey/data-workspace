@@ -20,8 +20,6 @@ appdirs==1.4.4
     # via
     #   black
     #   pyppeteer
-appnope==0.1.2
-    # via ipython
 asgiref==3.3.4
     # via
     #   -r requirements.txt
@@ -125,6 +123,8 @@ django-ckeditor==5.9.0
     # via -r requirements.txt
 django-compressor==2.4
     # via -r requirements.txt
+django-csp-helpers==0.6.2
+    # via -r requirements.txt
 django-csp==3.6
     # via -r requirements.txt
 django-db-geventpool==3.2.3
@@ -147,12 +147,15 @@ django-staff-sso-client==2.1.0
     # via -r requirements.txt
 django-waffle==2.0.0
     # via -r requirements.txt
+django-webpack-loader==1.1.0
+    # via -r requirements-dev.in
 django==3.2.4
     # via
     #   -r requirements.txt
     #   django-admin-sortable2
     #   django-appconf
     #   django-csp
+    #   django-csp-helpers
     #   django-db-geventpool
     #   django-debug-toolbar
     #   django-dynamic-models-readonly
@@ -214,17 +217,6 @@ ijson==3.1.3
     # via
     #   -r requirements.txt
     #   tabulator
-importlib-metadata==2.1.1
-    # via
-    #   -r requirements.txt
-    #   flake8
-    #   jsonschema
-    #   kombu
-    #   markdown
-    #   pep517
-    #   pluggy
-    #   pyppeteer
-    #   pytest
 iniconfig==1.1.1
     # via pytest
 ipdb==0.13.7
@@ -514,15 +506,11 @@ tqdm==4.56.0
 traitlets==5.0.5
     # via ipython
 typed-ast==1.4.2
-    # via
-    #   astroid
-    #   black
+    # via black
 typing-extensions==3.7.4.3
     # via
     #   -r requirements.txt
     #   aiohttp
-    #   asgiref
-    #   yarl
 unicodecsv==0.14.1
     # via
     #   -r requirements.txt
@@ -567,11 +555,6 @@ yarl==1.5.1
     #   aiohttp
 zenpy==2.0.21
     # via -r requirements.txt
-zipp==3.4.1
-    # via
-    #   -r requirements.txt
-    #   importlib-metadata
-    #   pep517
 zope.event==4.5.0
     # via
     #   -r requirements.txt

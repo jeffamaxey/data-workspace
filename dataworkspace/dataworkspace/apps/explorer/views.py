@@ -2,6 +2,7 @@ import logging
 import re
 from urllib.parse import urlencode
 
+from csp.decorators import csp_exempt
 from psycopg2 import DatabaseError
 
 from django.conf import settings
@@ -653,3 +654,11 @@ class ShareQueryConfirmationView(TemplateView):
             get_user_model(), id=self.kwargs['recipient_id']
         )
         return context
+
+
+class DataExplorerV2View(TemplateView):
+    template_name = 'explorer/data_explorer_v2.html'
+
+    @csp_exempt
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)

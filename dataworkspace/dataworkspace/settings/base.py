@@ -120,6 +120,7 @@ MIDDLEWARE = [
 
 if DEBUG:
     INSTALLED_APPS.append('debug_toolbar')
+    INSTALLED_APPS.append('webpack_loader')
     MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 
 if ELASTIC_APM:
@@ -658,3 +659,11 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 SUPERSET_VIEW_URL = f'https://superset.{APPLICATION_ROOT_DOMAIN}'
 SUPERSET_EDIT_URL = f'https://superset-edit.{APPLICATION_ROOT_DOMAIN}'
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'CACHE': not DEBUG,
+        'BUNDLE_DIR_NAME': 'js/data-explorer/bundles/',
+        'STATS_FILE': '/tmp/webpack-stats.json',
+    }
+}

@@ -4,6 +4,7 @@ from django.urls import include, path
 from dataworkspace.apps.accounts.utils import login_required
 from dataworkspace.apps.explorer.views import (
     CreateQueryView,
+    DataExplorerV2View,
     DeleteQueryView,
     DownloadFromQuerylogView,
     ListQueryLogView,
@@ -17,6 +18,7 @@ from dataworkspace.apps.explorer.views import (
 
 urlpatterns = [
     path('', login_required(PlayQueryView.as_view()), name='index'),
+    path('jacked/', login_required(DataExplorerV2View.as_view()), name='jacked'),
     path(
         'download/<int:querylog_id>',
         login_required(DownloadFromQuerylogView.as_view()),
@@ -51,6 +53,13 @@ urlpatterns = [
         'queries/share/confirmation/<int:recipient_id>',
         login_required(ShareQueryConfirmationView.as_view()),
         name='share_query_confirmation',
+    ),
+    path(
+        'api/',
+        include(
+            ('dataworkspace.apps.explorer.api_urls', 'explorer_api'),
+            namespace='explorer-api',
+        ),
     ),
 ]
 
