@@ -183,8 +183,8 @@ USE_TZ = True
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {'ecs': {'()': 'dataworkspace.utils.DataWorkspaceECSFormatter'}},
-    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'ecs'}},
+    # 'formatters': {'ecs': {'()': 'dataworkspace.utils.DataWorkspaceECSFormatter'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
     'loggers': {
         'django': {'handlers': ['console'], 'level': 'INFO'},
         'app': {'handlers': ['console'], 'level': 'INFO'},
@@ -664,6 +664,6 @@ WEBPACK_LOADER = {
     'DEFAULT': {
         'CACHE': not DEBUG,
         'BUNDLE_DIR_NAME': 'js/data-explorer/bundles/',
-        'STATS_FILE': '/tmp/webpack-stats.json',
+        'STATS_FILE': '/tmp/stats/webpack-stats.json',
     }
 }

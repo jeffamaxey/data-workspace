@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AgGridReact } from "ag-grid-react";
+import {notification} from "antd";
 
 export default function ResultsGrid({ queryLogId }) {
   const [gridApi, setGridApi] = useState(null);
@@ -21,7 +22,6 @@ export default function ResultsGrid({ queryLogId }) {
   }
 
   const onGridReady = (params) => {
-    console.log(params)
     setGridApi(params.api);
     setGridColumnApi(params.columnApi);
 
@@ -48,7 +48,17 @@ export default function ResultsGrid({ queryLogId }) {
           },
           body: JSON.stringify(qs),
         })
-          .then((resp) => resp.json())
+         .then(function(resp) {
+            if(resp.ok) {
+              return resp.json()
+            }
+            notification.error({
+              message: 'Error running query',
+              description:
+                'An unknown error occurred while trying to run your query.',
+            });
+            throw new Error('Failed to fetch query results from the backend');
+          })
           .then((data) => {
             if (!initalLoadComplete) {
               setColumnDefs(data.column_config);

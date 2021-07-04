@@ -16,6 +16,11 @@ urlpatterns = [
     path(
         'user-queries', login_required(UserQueriesView.as_view()), name='user-queries'
     ),
+    path(
+        'user-queries/<int:query_id>',
+        login_required(UserQueriesView.as_view()),
+        name='user-query',
+    ),
     path('run-query', login_required(RunQueryView.as_view()), name='run-query'),
     path(
         'query-status/<int:query_log_id>',

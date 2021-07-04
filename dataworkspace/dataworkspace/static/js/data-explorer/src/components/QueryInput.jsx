@@ -5,9 +5,22 @@ import ToolBar from "./ToolBar";
 
 const { TextArea } = Input;
 
-export default function QueryInput({ onSubmit, queryId, queryName, initialQuery }) {
+export default function QueryInput({
+  onSubmit,
+  queryId,
+  queryName,
+  queryDescription,
+  initialQuery,
+  onQuerySave,
+}) {
+  console.log('SETTING INITIAL STATE')
   const [query, setQuery] = useState(typeof initialQuery !== 'undefined' ? initialQuery : '');
-
+  const [savedQuery, setSavedQuery] = useState({
+    queryId: queryId,
+    queryName: queryName,
+    queryDescription: queryDescription,
+    query: initialQuery,
+  })
   const onKeyDown = e => {
     // Run the query on ctrl + enter
     if (e.keyCode === 13 && e.ctrlKey) onSubmit(query)
@@ -21,9 +34,37 @@ export default function QueryInput({ onSubmit, queryId, queryName, initialQuery 
     };
   });
 
+  const onQuerySaved = (saved) => {
+    setSavedQuery({
+      queryId: saved.id,
+      queryName: saved.name,
+      queryDescription: saved.description,
+      query: query,
+    });
+    onQuerySave();
+  }
+
+  const onQueryDeleted = () => {
+    console.log('setting query', savedQuery)
+    setSavedQuery({
+      queryId: undefined,
+      queryName: savedQuery.queryName,
+      queryDescription: savedQuery.queryDescription,
+      query: query,
+    });
+    onQuerySave();
+  }
+
+  console.log('query', savedQuery);
   return (
     <div style={{height: '100%'}}>
-      <ToolBar onQuerySubmit={() => onSubmit(query)} queryId={queryId}/>
+      <h1>query id {savedQuery.queryId}</h1>
+      <ToolBar
+        onQuerySubmit={() => onSubmit(query)}
+        {...savedQuery}
+        onQuerySave={savedQuery => onQuerySaved(savedQuery)}
+        onQueryDelete={() => onQueryDeleted()}
+      />
       <TextArea
         style={{ height: '100%'}}
         className="query-input"

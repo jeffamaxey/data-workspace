@@ -21,7 +21,14 @@ class App extends React.Component {
     tabs: [{
       title: 'Query 1',
       // TODO: Remove initial query
-      content: <QueryInput onSubmit={query => this.querySubmit(query)} initialQuery="select * from dit.data_hub__pipeline_items;"/>,
+      content: (
+        <QueryInput
+          onSubmit={query => this.querySubmit(query)}
+          initialQuery="select * from dit.data_hub__pipeline_items;"
+          onQuerySave={() => this.onQuerySave()}
+          queryName="Query 1"
+        />
+      ),
       key: "0"
     }],
     numTabs: 1,
@@ -60,7 +67,7 @@ class App extends React.Component {
     this.setState({ collapsed });
   };
 
-  addTab = ({id, name, query}) => {
+  addTab = ({id, name, query, description}) => {
     const numTabs = this.state.numTabs + 1;
     const activeTab = String(numTabs);
     const tabs = [...this.state.tabs];
@@ -70,9 +77,10 @@ class App extends React.Component {
         <QueryInput
           onSubmit={q => this.querySubmit(q)}
           queryId={id}
-          queryName={name}
-          queryDescription={name}
+          queryName={typeof name !== 'undefined' ? name : `Query ${numTabs}`}
+          queryDescription={description}
           initialQuery={query}
+          onQuerySave={() => this.onQuerySave()}
         />
       ),
       key: activeTab,
@@ -121,7 +129,6 @@ class App extends React.Component {
   }
 
   pollForQueryResults = (queryLogId, errorCallback, successCallback) => {
-    console.log('POLLING for', queryLogId);
     fetch(`/data-explorer/api/query-status/${queryLogId}`)
       .then((resp) => resp.json())
       .then((data) => {
@@ -175,6 +182,16 @@ class App extends React.Component {
         // Poll for either success or error for the query
         this.pollForQueryResults(data.query_log_id);
       });
+  }
+
+  onQuerySave = () => {
+    if (this.state.savedQueriesLoaded) {
+      this.setState({
+        savedQueriesLoaded: false,
+        savedQueries: [],
+      });
+      this.fetchSavedQueries();
+    }
   }
 
   render() {

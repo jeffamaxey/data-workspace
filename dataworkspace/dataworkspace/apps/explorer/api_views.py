@@ -46,6 +46,10 @@ class UserSchemasView(View):
 
 
 class UserQueriesView(View):
+    @csrf_exempt
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
     def get(self, request):
         return JsonResponse(
             [
@@ -61,6 +65,37 @@ class UserQueriesView(View):
             ],
             safe=False,
         )
+
+    def post(self, request):
+        post_data = json.loads(request.body)
+        query = Query.objects.create(
+            created_by_user=request.user,
+            title=post_data.get('name'),
+            description=post_data.get('description'),
+            sql=post_data.get('sql'),
+            connection=settings.EXPLORER_DEFAULT_CONNECTION,
+        )
+        return JsonResponse({'id': query.id})
+
+    def put(self, request, query_id):
+        post_data = json.loads(request.body)
+        try:
+            query = Query.objects.get(pk=query_id, created_by_user=request.user)
+        except Query.DoesNotExist:
+            return JsonResponse(404, status=404)
+        query.title = post_data.get('name')
+        query.description = post_data.get('description')
+        query.sql = post_data.get('sql')
+        query.save()
+        return JsonResponse({'id': query.id})
+
+    def delete(self, request, query_id):
+        try:
+            query = Query.objects.get(pk=query_id, created_by_user=request.user)
+        except Query.DoesNotExist:
+            return JsonResponse({}, status=404)
+        query.delete()
+        return JsonResponse({})
 
 
 class RunQueryView(View):
@@ -94,7 +129,7 @@ class RunQueryView(View):
                 query.connection,
                 query.id,
                 request.user.id,
-                None,
+                1,
                 settings.EXPLORER_DEFAULT_ROWS,
                 settings.EXPLORER_QUERY_TIMEOUT_MS,
             )

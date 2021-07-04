@@ -44,7 +44,7 @@ module.exports = {
         NODE_ENV: JSON.stringify("development"),
       },
     }),
-    new BundleTracker({filename: './webpack-stats.json'}),
+    new BundleTracker({filename: './stats/webpack-stats.json'}),
     new webpack.HotModuleReplacementPlugin(),
   ],
   devServer: {
