@@ -17,7 +17,7 @@ class App extends React.Component {
   api_base_url = '/data-explorer/api/';
 
   state = {
-    collapsed: false,
+    collapsed: true,
     activeTab: "0",
     tabs: [{
       title: 'Query 1',
