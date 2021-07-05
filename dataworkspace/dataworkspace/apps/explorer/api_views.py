@@ -123,8 +123,8 @@ class RunQueryView(View):
                 query.connection,
                 query.id,
                 request.user.id,
-                1,
-                settings.EXPLORER_DEFAULT_ROWS,
+                None,
+                999_999_999,
                 settings.EXPLORER_QUERY_TIMEOUT_MS,
             )
             return JsonResponse({'query_log_id': query_log.id})

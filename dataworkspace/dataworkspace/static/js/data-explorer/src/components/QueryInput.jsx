@@ -22,7 +22,8 @@ export default function QueryInput({
   })
   const onKeyDown = e => {
     // Run the query on ctrl + enter
-    if (e.keyCode === 13 && e.ctrlKey) onSubmit(query)
+    // TODO: This is not working correctly
+    // if (e.keyCode === 13 && e.ctrlKey) onSubmit(query)
   }
 
   useEffect(() => {

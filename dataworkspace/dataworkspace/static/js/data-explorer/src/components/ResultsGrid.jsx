@@ -32,6 +32,7 @@ export default function ResultsGrid({ queryLogId }) {
           limit: params.endRow - params.startRow,
           filters: cleanFilters(params.filterModel, columnDataTypeMap)
         };
+        console.log(params.sortModel);
         if (params.sortModel[0]) {
           qs['sortField'] = params.sortModel[0].colId;
           qs['sortDir'] = params.sortModel[0].sort;
