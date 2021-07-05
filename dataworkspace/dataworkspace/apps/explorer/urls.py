@@ -18,7 +18,7 @@ from dataworkspace.apps.explorer.views import (
 
 urlpatterns = [
     path('', login_required(PlayQueryView.as_view()), name='index'),
-    path('jacked/', login_required(DataExplorerV2View.as_view()), name='jacked'),
+    path('v2/', login_required(DataExplorerV2View.as_view()), name='v2'),
     path(
         'download/<int:querylog_id>',
         login_required(DownloadFromQuerylogView.as_view()),
