@@ -21,11 +21,9 @@ class App extends React.Component {
     activeTab: "0",
     tabs: [{
       title: 'Query 1',
-      // TODO: Remove initial query
       content: (
         <QueryInput
           onSubmit={query => this.querySubmit(query)}
-          initialQuery="select * from dit.data_hub__pipeline_items;"
           onQuerySave={() => this.onQuerySave()}
           queryName="Query 1"
         />
