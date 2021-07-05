@@ -13,7 +13,6 @@ export default function QueryInput({
   initialQuery,
   onQuerySave,
 }) {
-  console.log('SETTING INITIAL STATE')
   const [query, setQuery] = useState(typeof initialQuery !== 'undefined' ? initialQuery : '');
   const [savedQuery, setSavedQuery] = useState({
     queryId: queryId,
@@ -45,7 +44,6 @@ export default function QueryInput({
   }
 
   const onQueryDeleted = () => {
-    console.log('setting query', savedQuery)
     setSavedQuery({
       queryId: undefined,
       queryName: savedQuery.queryName,
@@ -55,10 +53,8 @@ export default function QueryInput({
     onQuerySave();
   }
 
-  console.log('query', savedQuery);
   return (
     <div style={{height: '100%'}}>
-      <h1>query id {savedQuery.queryId}</h1>
       <ToolBar
         onQuerySubmit={() => onSubmit(query)}
         {...savedQuery}

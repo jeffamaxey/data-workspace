@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {Modal, Button, Form, Input, notification} from 'antd';
 import TextArea from "antd/es/input/TextArea";
+import { getCookie } from "../utils/common";
 
 export default function UserQueryModal({ visible, queryId, queryName, queryDescription, query, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
@@ -16,12 +17,11 @@ export default function UserQueryModal({ visible, queryId, queryName, queryDescr
     setSaving(true);
     const isUpdate = typeof queryId !== 'undefined';
     let endpoint = '/data-explorer/api/user-queries' + (isUpdate ? `/${queryId}` : '');
-    console.log({...formValues,
-          query: query})
     fetch(endpoint, {
       method: isUpdate ? 'PUT': 'POST',
         headers: {
-          'Content-Type': 'application/json;charset=UTF-8'
+          'Content-Type': 'application/json;charset=UTF-8',
+          'X-CSRFToken': getCookie('data_workspace_csrf'),
         },
         body: JSON.stringify({
           ...formValues,

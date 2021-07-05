@@ -5,13 +5,13 @@ import psycopg2
 from django.conf import settings
 from django.http import JsonResponse
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 from psycopg2 import sql
 
 from dataworkspace import datasets_db
 from dataworkspace.apps.core.utils import (
     USER_SCHEMA_STEM,
     db_role_schema_suffix_for_user,
+    streaming_query_response,
 )
 from dataworkspace.apps.datasets.constants import GRID_DATA_TYPE_MAP
 from dataworkspace.apps.datasets.utils import build_filtered_dataset_query
@@ -46,10 +46,6 @@ class UserSchemasView(View):
 
 
 class UserQueriesView(View):
-    @csrf_exempt
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
     def get(self, request):
         return JsonResponse(
             [
@@ -101,10 +97,6 @@ class UserQueriesView(View):
 class RunQueryView(View):
     connection = 'datasets'
 
-    @csrf_exempt
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
     def post(self, request):
         post_data = json.loads(request.body)
         query = Query(
@@ -151,10 +143,6 @@ class QueryLogStatusView(View):
 
 
 class QueryLogResultsView(View):
-    @csrf_exempt
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
     def _get_table_details(self, query_log):
         schema_name = (
             f'{USER_SCHEMA_STEM}{db_role_schema_suffix_for_user(self.request.user)}'
@@ -197,13 +185,43 @@ class QueryLogResultsView(View):
             query_log.connection,
             f'SELECT * FROM {tempory_query_table_name(request.user, query_log_id)}',
         )
+
+        if request.GET.get('download'):
+            filters = {}
+            for filter_data in [json.loads(x) for x in request.POST.getlist('filters')]:
+                filters.update(filter_data)
+            column_config = [
+                x
+                for x in column_config
+                if x['field'] in request.POST.getlist('columns', [])
+            ]
+            if not column_config:
+                return JsonResponse({}, status=400)
+
+            post_data = {
+                'filters': filters,
+                'limit': None,
+                'sortDir': request.POST.get('sortDir', 'ASC'),
+                'sortField': request.POST.get('sortField', column_config[0]['field']),
+            }
+        else:
+            post_data = json.loads(request.body.decode('utf-8'))
+            post_data['limit'] = min(post_data.get('limit', 100), 100)
+
         schema, table = self._get_table_details(query_log)
         query = sql.SQL('SELECT * from {}.{}').format(
             sql.Identifier(schema), sql.Identifier(table)
         )
-
-        post_data = json.loads(request.body.decode('utf-8'))
         query, params = build_filtered_dataset_query(query, column_config, post_data)
+
+        if request.GET.get('download'):
+            return streaming_query_response(
+                request.user.email,
+                'datasets',
+                query,
+                request.POST.get('export_file_name', 'data-explorer-export.csv'),
+                params,
+            )
 
         return JsonResponse(
             {

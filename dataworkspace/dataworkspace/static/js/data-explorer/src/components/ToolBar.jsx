@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import {PageHeader, Button, Space, Modal, notification} from 'antd';
 import { ShareAltOutlined, PlayCircleFilled, SaveFilled, DeleteFilled, ExclamationCircleOutlined } from  '@ant-design/icons';
 import UserQueryModal from "./UserQueryModal";
+import { getCookie } from "../utils/common";
 
 const { confirm } = Modal;
 
@@ -17,8 +18,9 @@ export default function ToolBar({ onQuerySubmit, queryId, queryName, queryDescri
   const deleteSavedQuery = () => {
     fetch(`/data-explorer/api/user-queries/${queryId}`, {
       method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json;charset=UTF-8'
+      headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'X-CSRFToken': getCookie('data_workspace_csrf'),
         },
       })
       .then(function(resp) {

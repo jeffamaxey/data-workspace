@@ -7,6 +7,7 @@ import SideBar from "./components/SideBar";
 import TabPanel from "./components/TabPanel";
 import QueryInput from "./components/QueryInput";
 import ResultsPanel from "./components/ResultsPanel";
+import { getCookie } from "./utils/common";
 
 const { Content } = Layout;
 const QUERY_STATE_RUNNING = 0;
@@ -164,6 +165,10 @@ class App extends React.Component {
     // Create the "QueryLog"
     fetch('/data-explorer/api/run-query', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        'X-CSRFToken': getCookie('data_workspace_csrf'),
+      },
       body: JSON.stringify({
         query: query
       })
@@ -197,7 +202,7 @@ class App extends React.Component {
   render() {
     const { collapsed } = this.state;
     return (
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout style={{ minHeight: 'calc(100vh - 64px)' }}>
         <SideBar
           collapsed={collapsed}
           onCollapse={this.onCollapse}
