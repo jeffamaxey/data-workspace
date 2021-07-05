@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import psycopg2
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.views import View
 from psycopg2 import sql
@@ -25,6 +26,7 @@ from dataworkspace.apps.explorer.utils import (
     tempory_query_table_name,
     user_explorer_connection,
 )
+from dataworkspace.notify import send_email
 
 
 class UserSchemasView(View):
@@ -232,3 +234,38 @@ class QueryLogResultsView(View):
                 'data': self._get_rows(query_log.connection, query, params),
             }
         )
+
+
+class UserEmailSearchView(View):
+    def get(self, request):
+        emails = []
+        search_term = request.GET.get('email')
+        if search_term is not None:
+            emails = [
+                x.email
+                for x in get_user_model().objects.filter(
+                    email__istartswith=search_term
+                )[:10]
+            ]
+
+        return JsonResponse({'results': emails})
+
+
+class ShareQueryView(View):
+    def post(self, request):
+        post_data = json.loads(request.body.decode('utf-8'))
+        try:
+            recipient = get_user_model().objects.get(email=post_data['recipient'])
+        except get_user_model().DoesNotExist:
+            return JsonResponse({}, status=404)
+
+        send_email(
+            settings.NOTIFY_SHARE_EXPLORER_QUERY_TEMPLATE_ID,
+            recipient.email,
+            personalisation={
+                'sharer_first_name': request.user.first_name,
+                'message': post_data['message'],
+            },
+        )
+
+        return JsonResponse({})

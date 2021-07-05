@@ -4,11 +4,13 @@ import {PageHeader, Button, Space, Modal, notification} from 'antd';
 import { ShareAltOutlined, PlayCircleFilled, SaveFilled, DeleteFilled, ExclamationCircleOutlined } from  '@ant-design/icons';
 import UserQueryModal from "./UserQueryModal";
 import { getCookie } from "../utils/common";
+import ShareQueryModal from "./ShareQueryModal";
 
 const { confirm } = Modal;
 
 export default function ToolBar({ onQuerySubmit, queryId, queryName, queryDescription, query, onQuerySave, onQueryDelete}) {
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const onQuerySaved = savedQuery => {
     setShowSaveModal(false);
@@ -80,7 +82,13 @@ export default function ToolBar({ onQuerySubmit, queryId, queryName, queryDescri
         </Space>
       }
       extra={[
-        <Button key="share" icon={<ShareAltOutlined />}>Share query</Button>
+        <Button
+          key="share"
+          icon={<ShareAltOutlined />}
+          onClick={() => setShowShareModal(true)}
+        >
+          Share query
+        </Button>
       ]}
   >
       <UserQueryModal
@@ -93,6 +101,12 @@ export default function ToolBar({ onQuerySubmit, queryId, queryName, queryDescri
         onSaved={savedQuery => onQuerySaved(savedQuery)}
       />
 
+      <ShareQueryModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        query={query}
+        onSent={() => {}}
+      />
     </PageHeader>
   )
 }

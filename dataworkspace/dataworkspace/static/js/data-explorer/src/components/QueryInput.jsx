@@ -60,6 +60,7 @@ export default function QueryInput({
         {...savedQuery}
         onQuerySave={savedQuery => onQuerySaved(savedQuery)}
         onQueryDelete={() => onQueryDeleted()}
+        query={query}
       />
       <TextArea
         style={{ height: '100%'}}

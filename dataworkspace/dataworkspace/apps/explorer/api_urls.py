@@ -5,6 +5,8 @@ from dataworkspace.apps.explorer.api_views import (
     QueryLogResultsView,
     QueryLogStatusView,
     RunQueryView,
+    ShareQueryView,
+    UserEmailSearchView,
     UserQueriesView,
     UserSchemasView,
 )
@@ -32,4 +34,10 @@ urlpatterns = [
         login_required(QueryLogResultsView.as_view()),
         name='query-results',
     ),
+    path(
+        'user-emails',
+        login_required(UserEmailSearchView.as_view()),
+        name='user-emails',
+    ),
+    path('share-query', login_required(ShareQueryView.as_view()), name='share-query',),
 ]
