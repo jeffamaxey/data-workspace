@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState} from "react";
 import { AgGridReact } from "ag-grid-react";
 import {Button, notification} from "antd";
 import { DownloadOutlined } from '@ant-design/icons';
@@ -9,10 +9,8 @@ import BooleanFilter from "../filters/BooleanFilter";
 export default function ResultsGrid({ queryLogId }) {
   const [gridApi, setGridApi] = useState(null);
   const [gridColumnApi, setGridColumnApi] = useState(null);
-  const [error, setError] = useState(null);
   const [initalLoadComplete, setInitialLoadComplete] = useState(false);
   const [columnDefs, setColumnDefs] = useState([])
-  const [rowData, setRowData] = useState([])
   const [isDownloading, setIsDownloading] = useState(false);
   const [columnDataTypeMap, setColumnDataTypeMap] = useState([]);
 
