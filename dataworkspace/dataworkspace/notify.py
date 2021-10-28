@@ -18,8 +18,8 @@ def decrypt_token(token):
 
 
 def send_email(request, template_id, email_address, personalisation=None, reference=None):
-    # if 'impersonated_user' in request.session:
-    #     pass
+    if 'impersonated_user' in request.session:
+        pass
 
     client = NotificationsAPIClient(settings.NOTIFY_API_KEY)
 
