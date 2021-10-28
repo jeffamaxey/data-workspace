@@ -775,15 +775,15 @@ def visualisation_users_give_access_html_POST(request, gitlab_project, token_dat
     )
 
     if catalogue_item.published:
-        send_email(
-            request,
-            settings.NOTIFY_VISUALISATION_ACCESS_GRANTED_TEMPLATE_ID,
-            email_address,
-            personalisation={
-                "visualisation_name": catalogue_item.name,
-                "enquiries_contact_email": catalogue_item.enquiries_contact.email,
-            },
-        )
+        if not 'impersonated_user' in request.session:
+            send_email(
+                settings.NOTIFY_VISUALISATION_ACCESS_GRANTED_TEMPLATE_ID,
+                email_address,
+                personalisation={
+                    "visualisation_name": catalogue_item.name,
+                    "enquiries_contact_email": catalogue_item.enquiries_contact.email,
+                },
+            )
 
     messages.success(
         request,

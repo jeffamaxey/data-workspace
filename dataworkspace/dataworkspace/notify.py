@@ -17,10 +17,7 @@ def decrypt_token(token):
     return json.loads(fernet.decrypt(token).decode('utf-8'))
 
 
-def send_email(request, template_id, email_address, personalisation=None, reference=None):
-    if 'impersonated_user' in request.session:
-        pass
-
+def send_email(template_id, email_address, personalisation=None, reference=None):
     client = NotificationsAPIClient(settings.NOTIFY_API_KEY)
 
     client.send_email_notification(

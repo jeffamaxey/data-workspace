@@ -642,15 +642,15 @@ class ShareQueryView(FormView):
         if form_data['copy_sender']:
             contacts.add(self.request.user.email)
         for contact in contacts:
-            send_email(
-                self.request,
-                settings.NOTIFY_SHARE_EXPLORER_QUERY_TEMPLATE_ID,
-                contact,
-                personalisation={
-                    'sharer_first_name': self.request.user.first_name,
-                    'message': form_data['message'],
-                },
-            )
+            if not 'impersonated_user' in self.request.session:
+                send_email(
+                    settings.NOTIFY_SHARE_EXPLORER_QUERY_TEMPLATE_ID,
+                    contact,
+                    personalisation={
+                        'sharer_first_name': self.request.user.first_name,
+                        'message': form_data['message'],
+                    },
+                )
         return HttpResponseRedirect(
             reverse(
                 'explorer:share_query_confirmation', args=(form_data['to_user'].id,),
