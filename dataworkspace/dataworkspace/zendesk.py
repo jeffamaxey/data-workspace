@@ -189,7 +189,7 @@ If access has not been granted to the requestor within 5 working days, this will
         contacts.add(dataset.secondary_enquiries_contact.email)
 
     for contact in contacts:
-        if not 'impersonated_user' in request.session:
+        if 'impersonated_user' not in request.session:
             send_email(
                 settings.NOTIFY_VISUALISATION_ACCESS_REQUEST_TEMPLATE_ID,
                 contact,

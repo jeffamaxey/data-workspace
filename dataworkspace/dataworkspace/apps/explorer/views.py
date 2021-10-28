@@ -642,7 +642,7 @@ class ShareQueryView(FormView):
         if form_data['copy_sender']:
             contacts.add(self.request.user.email)
         for contact in contacts:
-            if not 'impersonated_user' in self.request.session:
+            if 'impersonated_user' not in self.request.session:
                 send_email(
                     settings.NOTIFY_SHARE_EXPLORER_QUERY_TEMPLATE_ID,
                     contact,
