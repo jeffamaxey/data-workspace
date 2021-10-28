@@ -190,6 +190,7 @@ If access has not been granted to the requestor within 5 working days, this will
 
     for contact in contacts:
         send_email(
+            request,
             settings.NOTIFY_VISUALISATION_ACCESS_REQUEST_TEMPLATE_ID,
             contact,
             personalisation={

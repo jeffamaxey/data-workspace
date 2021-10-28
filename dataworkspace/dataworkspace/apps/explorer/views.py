@@ -643,6 +643,7 @@ class ShareQueryView(FormView):
             contacts.add(self.request.user.email)
         for contact in contacts:
             send_email(
+                self.request,
                 settings.NOTIFY_SHARE_EXPLORER_QUERY_TEMPLATE_ID,
                 contact,
                 personalisation={
