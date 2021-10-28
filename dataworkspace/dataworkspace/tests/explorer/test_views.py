@@ -782,6 +782,30 @@ class TestShareQuery:
         (('play_id', PlaygroundSQLFactory), ('query_id', SimpleQueryFactory)),
     )
     @mock.patch('dataworkspace.apps.explorer.views.send_email')
+    def test_share_query_imporsanated_user_no_email(
+        self, mock_send_email, query_param, query_factory, staff_client, user
+    ):
+        staff_client.get(reverse("admin:index"), follow=True)
+        staff_client.get(reverse("impersonation:start", args=(user.id,)), follow=True)
+        query_obj = query_factory.create(created_by_user=user)
+        response = staff_client.post(
+            f"{reverse('explorer:share_query')}?{query_param}={query_obj.id}",
+            data={
+                'query': 'select 6870+2;',
+                'to_user': user.email,
+                'message': 'A test message',
+                'copy_sender': False,
+            },
+            follow=True,
+        )
+        assert b'Query shared' in response.content
+        assert not mock_send_email.called
+
+    @pytest.mark.parametrize(
+        'query_param, query_factory',
+        (('play_id', PlaygroundSQLFactory), ('query_id', SimpleQueryFactory)),
+    )
+    @mock.patch('dataworkspace.apps.explorer.views.send_email')
     def test_share_query_copy_sender(
         self, mock_send_email, query_param, query_factory, client, user, staff_user
     ):
@@ -803,18 +827,48 @@ class TestShareQuery:
                     settings.NOTIFY_SHARE_EXPLORER_QUERY_TEMPLATE_ID,
                     'bob.testerson@test.com',
                     personalisation={
-                        'message': 'A test message',
                         'sharer_first_name': 'Frank',
+                        'message': 'A test message',
                     },
                 ),
                 mock.call(
                     settings.NOTIFY_SHARE_EXPLORER_QUERY_TEMPLATE_ID,
                     'frank.exampleson@test.com',
                     personalisation={
-                        'message': 'A test message',
                         'sharer_first_name': 'Frank',
+                        'message': 'A test message',
                     },
                 ),
             ],
             any_order=True,
         )
+
+    @pytest.mark.parametrize(
+        'query_param, query_factory',
+        (('play_id', PlaygroundSQLFactory), ('query_id', SimpleQueryFactory)),
+    )
+    @mock.patch('dataworkspace.apps.explorer.views.send_email')
+    def test_share_query_copy_sender_impersonated_user_no_email(
+        self,
+        mock_send_email,
+        query_param,
+        query_factory,
+        staff_client,
+        user,
+        staff_user,
+    ):
+        staff_client.get(reverse("admin:index"), follow=True)
+        staff_client.get(reverse("impersonation:start", args=(user.id,)), follow=True)
+        query_obj = query_factory.create(created_by_user=user)
+        response = staff_client.post(
+            f"{reverse('explorer:share_query')}?{query_param}={query_obj.id}",
+            data={
+                'query': 'select 6870+2;',
+                'to_user': staff_user.email,
+                'message': 'A test message',
+                'copy_sender': True,
+            },
+            follow=True,
+        )
+        assert b'Query shared' in response.content
+        assert not mock_send_email.called

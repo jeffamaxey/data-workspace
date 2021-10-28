@@ -189,18 +189,19 @@ If access has not been granted to the requestor within 5 working days, this will
         contacts.add(dataset.secondary_enquiries_contact.email)
 
     for contact in contacts:
-        send_email(
-            settings.NOTIFY_VISUALISATION_ACCESS_REQUEST_TEMPLATE_ID,
-            contact,
-            personalisation={
-                "visualisation_name": dataset.name,
-                "visualisation_url": dataset_url,
-                "user_email": access_request.contact_email,
-                "goal": access_request.reason_for_access,
-                "people_url": get_people_url(request.user.get_full_name()),
-                "give_access_url": f"{give_access_url}?token={give_access_token}",
-            },
-        )
+        if not 'impersonated_user' in request.session:
+            send_email(
+                settings.NOTIFY_VISUALISATION_ACCESS_REQUEST_TEMPLATE_ID,
+                contact,
+                personalisation={
+                    "visualisation_name": dataset.name,
+                    "visualisation_url": dataset_url,
+                    "user_email": access_request.contact_email,
+                    "goal": access_request.reason_for_access,
+                    "people_url": get_people_url(request.user.get_full_name()),
+                    "give_access_url": f"{give_access_url}?token={give_access_token}",
+                },
+            )
 
     return ticket_reference
 

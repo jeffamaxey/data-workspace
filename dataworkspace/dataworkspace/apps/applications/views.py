@@ -774,7 +774,7 @@ def visualisation_users_give_access_html_POST(request, gitlab_project, token_dat
         visualisation_template=application_template
     )
 
-    if catalogue_item.published:
+    if catalogue_item.published and not 'impersonated_user' in request.session:
         send_email(
             settings.NOTIFY_VISUALISATION_ACCESS_GRANTED_TEMPLATE_ID,
             email_address,
