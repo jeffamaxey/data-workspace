@@ -180,7 +180,9 @@ def submit_query_for_execution(
     request, query_sql, query_connection, query_id, page, limit, timeout
 ):
     if 'impersonated_user' in request.session:
-        from dataworkspace.apps.applications.utils import get_sso_user
+        from dataworkspace.apps.applications.utils import (  # pylint: disable=import-outside-toplevel
+            get_sso_user,
+        )
 
         impersonator = get_sso_user(request)
     else:

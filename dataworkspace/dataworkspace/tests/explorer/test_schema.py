@@ -4,6 +4,10 @@ import pytest
 from django.conf import settings
 from django.core.cache import cache
 from django.test import RequestFactory
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 from dataworkspace.apps.explorer import schema
 
@@ -96,3 +100,24 @@ class TestSchemaInfo:
         )
         tables = [x.name.name for x in res]
         assert 'explorer_query' in tables
+
+    @patch('dataworkspace.apps.explorer.schema.get_user_explorer_connection_settings')
+    @patch('dataworkspace.apps.explorer.schema._get_includes')
+    @patch('dataworkspace.apps.explorer.schema._get_excludes')
+    def test_schema_info_when_impersonating(
+        self, mocked_excludes, mocked_includes, mock_connection_settings, staff_client, user, staff_user
+    ):
+        staff_client.get(reverse("admin:index"), follow=True)
+        staff_client.get(reverse("impersonation:start", args=(user.id,)), follow=True)
+
+        mocked_includes.return_value = None
+        mocked_excludes.return_value = []
+        mock_connection_settings.return_value = self._get_connection_data()
+        res = schema.schema_info(
+            self._get_request(user), settings.EXPLORER_CONNECTIONS['Postgres']
+        )
+        assert mocked_includes.called  # sanity check: ensure patch worked
+        tables = [x.name.name for x in res]
+        assert 'explorer_query' in tables
+        schemas = [x.name.schema for x in res]
+        assert 'public' in schemas

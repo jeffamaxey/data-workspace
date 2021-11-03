@@ -598,6 +598,20 @@ class TestQueryLog:
         q = SimpleQueryFactory()
         assert QueryLog(sql='foo', query_id=q.id).is_playground is False
 
+    def test_user_can_see_impersonated_user_queries_on_log_page(
+        self, staff_user, staff_client
+    ):
+        imp_user = UserFactory(email='foo@bar.net')
+        staff_client.get(reverse("impersonation:start", args=(imp_user.id,)), follow=True)
+
+        QueryLogFactory(sql="select 1234", run_by_user=imp_user)
+        QueryLogFactory(sql="select 9876", run_by_user=staff_user)
+
+        resp = staff_client.get(reverse("explorer:explorer_logs"))
+
+        assert "select 1234" in resp.content.decode(resp.charset)
+        assert "select 9876" not in resp.content.decode(resp.charset)
+
 
 @pytest.mark.django_db(transaction=True)
 class TestQueryLogEndpoint:
