@@ -1,7 +1,3 @@
-CREATE EXTENSION pgaudit;
-ALTER SYSTEM SET pgaudit.log = 'none';
-CREATE ROLE rds_pgaudit;
-
 CREATE DATABASE dataworkspace;
 CREATE DATABASE datasets;
 CREATE DATABASE airflow;
