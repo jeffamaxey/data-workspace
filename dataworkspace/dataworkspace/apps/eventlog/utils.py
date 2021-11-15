@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -5,6 +7,9 @@ from django.http.request import HttpRequest
 from django.utils.encoding import force_text
 
 from dataworkspace.apps.eventlog.models import EventLog
+
+
+logger = logging.getLogger('app')
 
 
 def log_event(request, event_type, related_object=None, extra=None):
@@ -16,13 +21,28 @@ def log_event(request, event_type, related_object=None, extra=None):
 
         user = get_sso_user(request)
 
-    return EventLog.objects.create(
+    impersonated_user = request.session.get('impersonated_user', None)
+
+    event = EventLog.objects.create(
         user=user,
         event_type=event_type,
         related_object=related_object,
         extra=extra,
-        impersonated_user=request.session.get('impersonated_user', None),
+        impersonated_user=impersonated_user,
     )
+
+    if impersonated_user:
+        logger.info(
+            "%s - User %s accessed %s while impersonating %s",
+            event.timestamp,
+            user,
+            extra,
+            impersonated_user,
+        )
+    else:
+        logger.info(event)
+
+    return event
 
 
 def log_permission_change(

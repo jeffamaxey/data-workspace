@@ -6,7 +6,9 @@ def test_impersonate_start(staff_client):
     user = get_user_model().objects.create(
         is_staff=False, is_superuser=False, email='test@test.com'
     )
-    response = staff_client.get(reverse("impersonation:start", args=(user.id,)), follow=True)
+    response = staff_client.get(
+        reverse("impersonation:start", args=(user.id,)), follow=True
+    )
 
     assert response.status_code == 200
     assert staff_client.session['impersonated_user'] == user

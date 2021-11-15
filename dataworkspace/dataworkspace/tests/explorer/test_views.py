@@ -602,7 +602,9 @@ class TestQueryLog:
         self, staff_user, staff_client
     ):
         imp_user = UserFactory(email='foo@bar.net')
-        staff_client.get(reverse("impersonation:start", args=(imp_user.id,)), follow=True)
+        staff_client.get(
+            reverse("impersonation:start", args=(imp_user.id,)), follow=True
+        )
 
         QueryLogFactory(sql="select 1234", run_by_user=imp_user)
         QueryLogFactory(sql="select 9876", run_by_user=staff_user)

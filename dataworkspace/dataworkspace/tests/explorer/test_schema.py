@@ -4,6 +4,7 @@ import pytest
 from django.conf import settings
 from django.core.cache import cache
 from django.test import RequestFactory
+
 try:
     from django.urls import reverse
 except ImportError:
@@ -105,7 +106,13 @@ class TestSchemaInfo:
     @patch('dataworkspace.apps.explorer.schema._get_includes')
     @patch('dataworkspace.apps.explorer.schema._get_excludes')
     def test_schema_info_when_impersonating(
-        self, mocked_excludes, mocked_includes, mock_connection_settings, staff_client, user, staff_user
+        self,
+        mocked_excludes,
+        mocked_includes,
+        mock_connection_settings,
+        staff_client,
+        user,
+        staff_user,
     ):
         staff_client.get(reverse("admin:index"), follow=True)
         staff_client.get(reverse("impersonation:start", args=(user.id,)), follow=True)
