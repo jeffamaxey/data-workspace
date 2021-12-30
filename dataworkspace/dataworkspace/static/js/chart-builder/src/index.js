@@ -7,7 +7,8 @@ if (module.hot) {
   module.hot.accept();
 }
 
+const el = document.getElementById('chart-builder-app')
 ReactDOM.render(
-    <App />,
-  document.getElementById('chart-builder-app')
+  <App chartId={el.attributes['data-chart-id'].value} />,
+  el
 );

@@ -5,7 +5,6 @@ const BundleTracker = require('webpack-bundle-tracker')
 module.exports = {
   context: __dirname,
   mode: 'development',
-  // entry: "./src/index.js",
   entry: {
     main: [
       'react-hot-loader/patch',

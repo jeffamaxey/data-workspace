@@ -3,17 +3,8 @@
 {% load render_bundle from webpack_loader %}
 {% block title %}Create chart{% endblock title %}
 {% block main %}
-  <main class="govuk-main-wrapper">
-    <div class="govuk-width-container">
-        <div class="govuk-grid-row">
-          <div class="govuk-grid-column-full">
-            <div id="chart-builder-app">
-              <h1>TODO</h1>
-            </div>
-            </div>
-          </div>
-        </div>
-    </div>
+  <main class="govuk-main-wrapper" style="padding: 0;">
+    <div id="chart-builder-app" data-chart-id="{{ chart.id }}"></div>
   </main>
   {% render_bundle "main" "js" %}
 {% endblock main %}

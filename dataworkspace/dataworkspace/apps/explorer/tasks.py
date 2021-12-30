@@ -136,12 +136,17 @@ def _run_querylog_query(query_log_id, page, limit, timeout):
                 for i, col in enumerate(cursor.description, 1)
             ]
             cursor.execute(f'CREATE TABLE {table_name} ({", ".join(prefixed_sql_columns)})')
+
+            limit_clause = ""
+            if limit is not None:
+                limit_clause = f" LIMIT {limit}"
+
             offset = ""
-            if page and page > 1:
+            if page and page > 1 and limit is not None:
                 offset = f" OFFSET {(page - 1) * limit}"
 
             cursor.execute(
-                f"INSERT INTO {table_name} SELECT * FROM ({sql}) sq LIMIT {limit}{offset}"
+                f"INSERT INTO {table_name} SELECT * FROM ({sql}) sq {limit_clause}{offset}"
             )
             cursor.execute(f"SELECT COUNT(*) FROM ({sql}) sq")
         except (psycopg2.ProgrammingError, psycopg2.DataError) as e:

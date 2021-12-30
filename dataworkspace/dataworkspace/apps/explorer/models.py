@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import logging
 import re
+import uuid
 
 from dynamic_models.models import AbstractFieldSchema, AbstractModelSchema  # noqa: I202
 from django.conf import settings
@@ -12,6 +13,7 @@ try:
 except ImportError:
     from django.core.urlresolvers import reverse
 
+from dataworkspace.apps.core.models import TimeStampedUserModel
 from dataworkspace.apps.explorer.constants import QueryLogState
 
 
@@ -155,3 +157,12 @@ class ModelSchema(AbstractModelSchema):
 
 class FieldSchema(AbstractFieldSchema):
     name = models.CharField(max_length=256, unique=True)
+
+
+class ChartBuilderChart(TimeStampedUserModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    query_log = models.ForeignKey(QueryLog, related_name="chart", on_delete=models.PROTECT)
+    original_query_log = models.ForeignKey(QueryLog, related_name="+", on_delete=models.DO_NOTHING)
+
+    def get_edit_url(self):
+        return reverse("explorer:explorer-charts:edit-chart", args=(self.id,))
