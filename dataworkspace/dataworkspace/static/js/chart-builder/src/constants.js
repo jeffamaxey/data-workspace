@@ -29,3 +29,36 @@ export const queryStates = {
   failed: 1,
   complete: 2,
 }
+
+export const axisMap = {
+  scatter: {
+    x: 'x',
+    y: 'y',
+    xsrc: 'xsrc',
+    ysrc: 'ysrc',
+  },
+  line: {
+    x: 'x',
+    y: 'y',
+    xsrc: 'xsrc',
+    ysrc: 'ysrc',
+  },
+  bar: {
+    x: 'x',
+    y: 'y',
+    xsrc: 'xsrc',
+    ysrc: 'ysrc',
+  },
+  pie: {
+    x: 'x',
+    y: 'y',
+    xsrc: 'labelsrc',
+    ysrc: 'valuesrc',
+  },
+  scattermapbox: {
+    x: 'lat',
+    y: 'lon',
+    xsrc: 'latsrc',
+    ysrc: 'lonsrc',
+  },
+}

@@ -7,7 +7,7 @@
   background-color: rgba(0, 0, 0, 0.4);
   z-index: 999;
   padding-bottom: 10px;
-  height: 450px;
+  height: 100%;
   display: table;
   width: 100%;
 }
@@ -24,4 +24,20 @@
   -webkit-animation: spin 2s linear infinite;
   animation: spin 2s linear infinite;
   margin: 0 auto;
+}
+.chart-toolbar {
+  padding: 25px 10px 0 10px;
+}
+.chart-toolbar > div:last-child {
+  text-align: right;
+  padding: 10px;
+}
+.chart-toolbar > div:last-child .govuk-button {
+  font-size: 1rem;
+  margin-left: 10px;
+}
+.plotly_editor {
+  border-bottom: 1px solid lightgray;
+  border-left: 1px solid lightgray;
+  border-right: 1px solid lightgray;
 }

@@ -1,0 +1,17 @@
+{% extends "explorer/base.html" %}
+{% block title %}Data Explorer - Delete query{% endblock %}
+{% block content %}
+  <h1 class="govuk-heading-xl govuk-!-margin-bottom-6">Delete chart</h1>
+  <p class="govuk-body">
+    Charts can only be deleted if they are not referenced by any datasets on the site.
+  </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="govuk-label govuk-!-margin-bottom-7">
+            Are you sure you want to delete <a href="{{ object.get_edit_url }}" class="govuk-link govuk-link--no-visited-state">{{ object.title }}</a>?
+        </div>
+        <div>
+          <button type="submit" class="govuk-button govuk-button--warning">Delete chart</button>
+        </div>
+    </form>
+{%  endblock %}

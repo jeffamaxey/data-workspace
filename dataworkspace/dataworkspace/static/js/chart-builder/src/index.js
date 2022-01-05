@@ -9,6 +9,8 @@ if (module.hot) {
 
 const el = document.getElementById('chart-builder-app')
 ReactDOM.render(
-  <App chartId={el.attributes['data-chart-id'].value} />,
-  el
+  <App
+    chartId={el.attributes['data-chart-id'].value}
+    chartData={JSON.parse(document.getElementById('chartConfig').textContent)}
+  />, el
 );

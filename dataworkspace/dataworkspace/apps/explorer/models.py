@@ -161,8 +161,14 @@ class FieldSchema(AbstractFieldSchema):
 
 class ChartBuilderChart(TimeStampedUserModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
     query_log = models.ForeignKey(QueryLog, related_name="chart", on_delete=models.PROTECT)
     original_query_log = models.ForeignKey(QueryLog, related_name="+", on_delete=models.DO_NOTHING)
+    chart_config = models.JSONField(null=True)
+
+    class Meta:
+        ordering = ("-created_date",)
 
     def get_edit_url(self):
         return reverse("explorer:explorer-charts:edit-chart", args=(self.id,))

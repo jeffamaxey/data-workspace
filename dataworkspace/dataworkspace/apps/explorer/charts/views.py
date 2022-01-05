@@ -1,16 +1,20 @@
+import json
 from collections import defaultdict
+from datetime import datetime
 
 import psycopg2
 from csp.decorators import csp_exempt
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import RedirectView
+from django.views.generic import DeleteView, ListView, RedirectView
 from psycopg2 import sql
 
 from dataworkspace import datasets_db
 from dataworkspace.apps.core.utils import USER_SCHEMA_STEM, db_role_schema_suffix_for_user
+from dataworkspace.apps.datasets.templatetags.datasets_tags import date_with_gmt_offset
 from dataworkspace.apps.explorer.constants import QueryLogState
 from dataworkspace.apps.explorer.models import ChartBuilderChart, QueryLog
 from dataworkspace.apps.explorer.tasks import submit_query_for_execution
@@ -20,7 +24,7 @@ from dataworkspace.apps.explorer.utils import (
 )
 
 
-class ChartBuilderCreateView(RedirectView):
+class ChartCreateView(RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         # Given a data explorer query log we need to save the results
         # of the full query to a database table to allow us to query
@@ -47,16 +51,19 @@ class ChartBuilderCreateView(RedirectView):
                 None,
                 settings.EXPLORER_QUERY_TIMEOUT_MS,
             )
+            title = f"New chart ({date_with_gmt_offset(datetime.now())})"
             chart = ChartBuilderChart.objects.create(
+                title=title,
                 created_by=self.request.user,
                 query_log=query_log,
                 original_query_log_id=kwargs["query_log_id"],
+                chart_config={"layout": {"title": {"text": title}}},
             )
 
         return chart.get_edit_url()
 
 
-class ChartBuilderEditView(View):
+class ChartEditView(View):
     template_name = "explorer/charts/chart_builder.html"
 
     @csp_exempt
@@ -70,6 +77,16 @@ class ChartBuilderEditView(View):
             self.template_name,
             context={"chart": chart},
         )
+
+    def post(self, request, chart_id):
+        chart = get_object_or_404(ChartBuilderChart, created_by=request.user, pk=chart_id)
+        chart.chart_config = json.loads(request.body).get("config", None)
+        try:
+            chart.title = chart.chart_config["layout"]["title"]["text"]
+        except KeyError:
+            pass
+        chart.save()
+        return JsonResponse({}, status=200)
 
 
 class ChartQueryStatusView(View):
@@ -129,3 +146,22 @@ class ChartQueryResultsView(View):
                 "data": self._get_rows(chart, columns),
             }
         )
+
+
+class ChartListView(ListView):
+    model = QueryLog
+    context_object_name = "charts"
+    template_name = "explorer/charts/chartbuilderchart_list.html"
+
+    def get_queryset(self):
+        return ChartBuilderChart.objects.filter(created_by=self.request.user)
+
+
+class ChartDeleteView(DeleteView):
+    model = QueryLog
+    success_url = reverse_lazy("explorer:explorer-charts:list-charts")
+    pk_url_kwarg = "chart_id"
+    template_name = "explorer/charts/chartbuilderchart_confirm_delete.html"
+
+    def get_queryset(self):
+        return ChartBuilderChart.objects.filter(created_by=self.request.user)
