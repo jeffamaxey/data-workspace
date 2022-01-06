@@ -3,7 +3,7 @@ from datetime import datetime
 
 from csp.decorators import csp_exempt
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.views import View
@@ -131,3 +131,9 @@ class ChartDeleteView(DeleteView):
 
     def get_queryset(self):
         return ChartBuilderChart.objects.filter(created_by=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        chart = self.get_object()
+        if chart.is_published():
+            return HttpResponseRedirect(chart.get_edit_url())
+        return super().delete(request, *args, **kwargs)

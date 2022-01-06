@@ -206,3 +206,6 @@ class ChartBuilderChart(TimeStampedUserModel):
             if trace.get("textsrc", None) is not None:
                 columns.append(trace["textsrc"])
         return columns
+
+    def is_published(self):
+        return self.datasets.count() > 0
