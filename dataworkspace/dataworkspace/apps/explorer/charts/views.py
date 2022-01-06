@@ -5,7 +5,7 @@ from csp.decorators import csp_exempt
 from django.conf import settings
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import DeleteView, ListView, RedirectView
 
@@ -52,7 +52,7 @@ class ChartCreateView(RedirectView):
                 chart_config={"layout": {"title": {"text": title}}},
             )
 
-        return chart.get_edit_url()
+        return chart.get_edit_url() + "?new"
 
 
 class ChartEditView(View):
@@ -67,7 +67,12 @@ class ChartEditView(View):
         return render(
             request,
             self.template_name,
-            context={"chart": chart},
+            context={
+                "chart": chart,
+                "back_link": reverse("explorer:running_query", args=(chart.original_query_log.id,))
+                if "new" in request.GET
+                else reverse("explorer:explorer-charts:list-charts"),
+            },
         )
 
     def post(self, request, chart_id):

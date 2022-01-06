@@ -167,9 +167,9 @@ class App extends React.Component {
               </PlotlyEditor>
               <div className="govuk-grid-row chart-toolbar">
                 <div className="govuk-grid-column-one-third">
-                  <button className="govuk-button govuk-button--secondary">
+                  <a className="govuk-button govuk-button--secondary" href={this.props.backLink}>
                     Back
-                  </button>
+                  </a>
                 </div>
                 <div className="govuk-grid-column-two-thirds">
                   <a href={`/data-explorer/charts/delete/${this.props.chartId}`} role="button" draggable="false" className="govuk-button govuk-button--warning">

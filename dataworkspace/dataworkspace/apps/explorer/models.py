@@ -179,7 +179,7 @@ class ChartBuilderChart(TimeStampedUserModel):
 
     def get_table_details(self):
         schema_name = f"{USER_SCHEMA_STEM}{db_role_schema_suffix_for_user(self.created_by)}"
-        return schema_name, f"_chart_builder_tmp_{self.query_log.id}"
+        return schema_name, f"_data_explorer_tmp_query_{self.query_log.id}"
 
     def get_table_data(self, columns=None):
         schema, table = self.get_table_details()

@@ -11,6 +11,7 @@ const el = document.getElementById('chart-builder-app')
 ReactDOM.render(
   <App
     chartId={el.attributes['data-chart-id'].value}
+    backLink={el.attributes['data-back-link'].value}
     chartData={JSON.parse(document.getElementById('chartConfig').textContent)}
   />, el
 );
