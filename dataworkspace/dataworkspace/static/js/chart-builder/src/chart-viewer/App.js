@@ -6,17 +6,14 @@ import {getCookie} from "../chart-builder/utils/common";
 import {axisMap} from "../chart-builder/constants";
 
 class App extends React.Component {
-  api_base_url = '/data-explorer/api/';
   constructor(props) {
     super(props);
     this.state = {
       loadingData: true,
       dataSources: {},
-      dataSourceOptions: [],
       traces: [],
       layout: {},
       frames: [],
-      fetchedColumns: [],
     }
   }
 
@@ -40,10 +37,6 @@ class App extends React.Component {
           loadingData: false,
           layout: this.props.chartData.layout ? this.props.chartData.layout : {},
           frames: this.props.chartData.frames ? this.props.chartData.frames : [],
-          dataSourceOptions: Object.keys(data.data).map(name => ({
-            value: name,
-            label: name,
-          }))
         };
         if (this.props.chartData.traces) {
           newState.traces = this.props.chartData.traces.map(trace => {
@@ -53,10 +46,9 @@ class App extends React.Component {
             return trace;
           });
         }
-        console.log('STATE', newState)
         this.setState(newState)
       }).catch((err) => {
-        console.log('ERROR', err)
+        console.error('ERROR', err)
         this.setState({
           loadingData: false,
           queryError: 'An error occurred while fetching data for the chart'

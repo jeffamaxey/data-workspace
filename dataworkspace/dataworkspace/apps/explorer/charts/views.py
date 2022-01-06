@@ -104,12 +104,11 @@ class ChartQueryStatusView(View):
 class ChartQueryResultsView(View):
     def get(self, request, chart_id):
         chart = get_object_or_404(ChartBuilderChart, created_by=request.user, pk=chart_id)
-        columns = request.GET.get("columns", "").split(",")
         return JsonResponse(
             {
                 "total_rows": chart.query_log.rows,
                 "duration": chart.query_log.duration,
-                "data": chart.get_table_data(columns),
+                "data": chart.get_table_data(),
             }
         )
 

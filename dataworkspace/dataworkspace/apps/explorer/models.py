@@ -181,10 +181,12 @@ class ChartBuilderChart(TimeStampedUserModel):
         schema_name = f"{USER_SCHEMA_STEM}{db_role_schema_suffix_for_user(self.created_by)}"
         return schema_name, f"_chart_builder_tmp_{self.query_log.id}"
 
-    def get_table_data(self, columns):
+    def get_table_data(self, columns=None):
         schema, table = self.get_table_details()
         query = sql.SQL("SELECT {} from {}.{}").format(
-            sql.SQL(",").join(map(sql.Identifier, columns)),
+            sql.SQL(",").join(map(sql.Identifier, columns))
+            if columns is not None
+            else sql.SQL("*"),
             sql.Identifier(schema),
             sql.Identifier(table),
         )

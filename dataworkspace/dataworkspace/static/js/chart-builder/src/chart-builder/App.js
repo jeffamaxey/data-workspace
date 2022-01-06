@@ -9,11 +9,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import { getCookie } from "./utils/common";
 import ErrorModal from "./components/ErrorModal";
 
-const config = {editable: true};
-const LOAD_DATA_ON_INIT = true;
-
 class App extends React.Component {
-  api_base_url = '/data-explorer/api/';
   constructor(props) {
     super(props);
     this.state = {
@@ -28,7 +24,6 @@ class App extends React.Component {
       traces: [],
       layout: {},
       frames: [],
-      fetchedColumns: [],
     }
   }
 
@@ -53,15 +48,15 @@ class App extends React.Component {
             this.pollForQueryResults()
           }, 1000);
         }
-        else if (data.state === queryStates.complete && LOAD_DATA_ON_INIT) {
-          this.fetchQueryResults(this.state.dataSourceOptions.map(v => v.value));
+        else if (data.state === queryStates.complete) {
+          this.fetchQueryResults();
         }
     });
   }
 
-  fetchQueryResults = (columns) => {
+  fetchQueryResults = () => {
     this.setState({ loadingData: true });
-    fetch(`/data-explorer/charts/query-results/${this.props.chartId}/?columns=${columns.join(',')}`)
+    fetch(`/data-explorer/charts/query-results/${this.props.chartId}/`)
       .then((resp) => resp.json())
       .then((data) => {
         console.log(`Fetched ${data.total_rows} rows in ${data.duration} seconds`);
@@ -69,7 +64,6 @@ class App extends React.Component {
         const newState = {
           dataSources,
           loadingData: false,
-          fetchedColumns: [ ...this.state.fetchedColumns, ...columns ],
           editorRevision: this.state.editorRevision + 1,
           layout: this.props.chartData.layout ? this.props.chartData.layout : {},
           frames: this.props.chartData.frames ? this.props.chartData.frames : [],
@@ -92,47 +86,12 @@ class App extends React.Component {
   }
 
   resetChart = () => {
-    const newState = {
+    this.setState({
       editorRevision: this.state.editorRevision + 1,
       layout: {},
       frames: [],
       traces: [],
-    };
-    // if (this.props.chartData.traces) {
-    //   newState.traces = this.props.chartData.traces.map(trace => {
-    //     trace[axisMap[trace.type].x] = this.state.dataSources[trace[axisMap[trace.type].xsrc]];
-    //     trace[axisMap[trace.type].y] = this.state.dataSources[trace[axisMap[trace.type].ysrc]];
-    //     return trace;
-    //   });
-    // }
-    this.setState(newState)
-  }
-
-  onChartUpdate(traces, layout, frames) {
-    this.setState({traces, layout, frames});
-    // console.log('Anything', anything);
-    // const possibleSources = [
-    //   ["xsrc", "ysrc"], ["latsrc", "lonsrc"], ["labelssrc", "valuessrc"]
-    // ]
-    // let requiredCols = []
-    // traces.forEach(chart => {
-    //   console.log('CHART', chart);
-    //   possibleSources.forEach(sources => {
-    //     const xsrc = chart[sources[0]];
-    //     const ysrc = chart[sources[1]];
-    //     if (xsrc != null && ysrc != null) {
-    //       if (!this.state.fetchedColumns.includes(xsrc) && !requiredCols.includes(xsrc)) {
-    //         requiredCols.push(xsrc);
-    //       }
-    //       if (!this.state.fetchedColumns.includes(ysrc) && !requiredCols.includes(ysrc)) {
-    //         requiredCols.push(ysrc);
-    //       }
-    //     }
-    //   });
-    // })
-    // if (requiredCols.length > 0) {
-    //   this.fetchQueryResults(requiredCols);
-    // }
+    })
   }
 
   showStatusModal = () => {
@@ -148,10 +107,6 @@ class App extends React.Component {
   }
 
   saveChart = () => {
-    /*
-     * TODO: Make an api call to save the chart
-     */
-    console.log('saving chart', this.state.traces);
     const that = this;
     this.setState({ savingChart: true });
     fetch(`/data-explorer/charts/edit/${this.props.chartId}/`, {
@@ -192,12 +147,12 @@ class App extends React.Component {
               <PlotlyEditor
                 data={this.state.traces}
                 layout={this.state.layout}
-                config={config}
+                config={{ editable: true }}
                 frames={this.state.frames}
                 dataSources={this.state.dataSources}
                 dataSourceOptions={this.state.dataSourceOptions}
                 plotly={plotly}
-                onUpdate={(config, layout, frames) => this.onChartUpdate(config, layout, frames)}
+                onUpdate={(traces, layout, frames) => this.setState({traces, layout, frames})}
                 useResizeHandler
                 debug
                 advancedTraceTypeSelector
