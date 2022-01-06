@@ -189,4 +189,10 @@ urlpatterns = [
         {"model_class": models.ReferenceDataset},
         name="reference_dataset_changelog",
     ),
+    path(
+        "<uuid:dataset_uuid>/chart/<int:object_id>/",
+        login_required(views.DatasetChartView.as_view()),
+        {"model_class": models.DataSet},
+        name="dataset_chart",
+    ),
 ]

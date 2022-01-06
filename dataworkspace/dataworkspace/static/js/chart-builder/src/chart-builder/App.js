@@ -25,7 +25,7 @@ class App extends React.Component {
       editorRevision: 0,
       dataSources: {},
       dataSourceOptions: [],
-      chartConfig: [],
+      traces: [],
       layout: {},
       frames: [],
       fetchedColumns: [],
@@ -75,9 +75,10 @@ class App extends React.Component {
           frames: this.props.chartData.frames ? this.props.chartData.frames : [],
         };
         if (this.props.chartData.traces) {
-          newState.chartConfig = this.props.chartData.traces.map(trace => {
+          newState.traces = this.props.chartData.traces.map(trace => {
             trace[axisMap[trace.type].x] = dataSources[trace[axisMap[trace.type].xsrc]];
             trace[axisMap[trace.type].y] = dataSources[trace[axisMap[trace.type].ysrc]];
+            if (trace.textsrc) trace.text = dataSources[trace.textsrc];
             return trace;
           });
         }
@@ -95,10 +96,10 @@ class App extends React.Component {
       editorRevision: this.state.editorRevision + 1,
       layout: {},
       frames: [],
-      chartConfig: [],
+      traces: [],
     };
     // if (this.props.chartData.traces) {
-    //   newState.chartConfig = this.props.chartData.traces.map(trace => {
+    //   newState.traces = this.props.chartData.traces.map(trace => {
     //     trace[axisMap[trace.type].x] = this.state.dataSources[trace[axisMap[trace.type].xsrc]];
     //     trace[axisMap[trace.type].y] = this.state.dataSources[trace[axisMap[trace.type].ysrc]];
     //     return trace;
@@ -107,14 +108,14 @@ class App extends React.Component {
     this.setState(newState)
   }
 
-  onChartUpdate(chartConfig, layout, frames) {
-    this.setState({chartConfig, layout, frames});
+  onChartUpdate(traces, layout, frames) {
+    this.setState({traces, layout, frames});
     // console.log('Anything', anything);
     // const possibleSources = [
     //   ["xsrc", "ysrc"], ["latsrc", "lonsrc"], ["labelssrc", "valuessrc"]
     // ]
     // let requiredCols = []
-    // chartConfig.forEach(chart => {
+    // traces.forEach(chart => {
     //   console.log('CHART', chart);
     //   possibleSources.forEach(sources => {
     //     const xsrc = chart[sources[0]];
@@ -150,7 +151,7 @@ class App extends React.Component {
     /*
      * TODO: Make an api call to save the chart
      */
-    console.log('saving chart', this.state.chartConfig);
+    console.log('saving chart', this.state.traces);
     const that = this;
     this.setState({ savingChart: true });
     fetch(`/data-explorer/charts/edit/${this.props.chartId}/`, {
@@ -161,7 +162,7 @@ class App extends React.Component {
       },
       body: JSON.stringify({
         config: {
-          traces: this.state.chartConfig.map(chart => {
+          traces: this.state.traces.map(chart => {
             return {...chart, x: [], y: [], lat: [], lon: [], text: []}
           }),
           layout: this.state.layout,
@@ -189,7 +190,7 @@ class App extends React.Component {
           <div className="govuk-grid-row">
             <div className="govuk-grid-column-full" id="plotly-editor">
               <PlotlyEditor
-                data={this.state.chartConfig}
+                data={this.state.traces}
                 layout={this.state.layout}
                 config={config}
                 frames={this.state.frames}

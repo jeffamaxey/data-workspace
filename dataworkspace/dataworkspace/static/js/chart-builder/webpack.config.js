@@ -11,11 +11,17 @@ module.exports = {
       'webpack-dev-server/client?http://0.0.0.0:3000',
       'webpack/hot/only-dev-server',
       path.join(__dirname, './src/chart-builder/index')
+    ],
+    viewer: [
+      'react-hot-loader/patch',
+      'webpack-dev-server/client?http://0.0.0.0:3000',
+      'webpack/hot/only-dev-server',
+      path.join(__dirname, './src/chart-viewer/index')
     ]
   },
   output: {
     path: path.resolve('./bundles/'),
-    filename: "[name]-[hash].js",
+    filename: "[name]-[fullhash].js",
     publicPath: 'http://0.0.0.0:3000/js/builds/',
   },
   module: {

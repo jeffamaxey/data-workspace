@@ -1,8 +1,6 @@
 import json
-from collections import defaultdict
 from datetime import datetime
 
-import psycopg2
 from csp.decorators import csp_exempt
 from django.conf import settings
 from django.http import JsonResponse
@@ -10,18 +8,12 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import DeleteView, ListView, RedirectView
-from psycopg2 import sql
 
 from dataworkspace import datasets_db
-from dataworkspace.apps.core.utils import USER_SCHEMA_STEM, db_role_schema_suffix_for_user
 from dataworkspace.apps.datasets.templatetags.datasets_tags import date_with_gmt_offset
 from dataworkspace.apps.explorer.constants import QueryLogState
 from dataworkspace.apps.explorer.models import ChartBuilderChart, QueryLog
 from dataworkspace.apps.explorer.tasks import submit_query_for_execution
-from dataworkspace.apps.explorer.utils import (
-    get_user_explorer_connection_settings,
-    user_explorer_connection,
-)
 
 
 class ChartCreateView(RedirectView):
@@ -110,32 +102,6 @@ class ChartQueryStatusView(View):
 
 
 class ChartQueryResultsView(View):
-    def _get_table_details(self, query_log):
-        schema_name = f"{USER_SCHEMA_STEM}{db_role_schema_suffix_for_user(self.request.user)}"
-        return schema_name, f"_data_explorer_tmp_query_{query_log.id}"
-
-    def _get_rows(self, chart, columns):
-        schema, table = self._get_table_details(chart.query_log)
-        query = sql.SQL("SELECT {} from {}.{}").format(
-            psycopg2.sql.SQL(",").join(map(psycopg2.sql.Identifier, columns)),
-            sql.Identifier(schema),
-            sql.Identifier(table),
-        )
-        user_connection_settings = get_user_explorer_connection_settings(
-            self.request.user, chart.query_log.connection
-        )
-        with user_explorer_connection(user_connection_settings) as conn:
-            with conn.cursor(
-                name="query-log-data",
-                cursor_factory=psycopg2.extras.RealDictCursor,
-            ) as cursor:
-                cursor.execute(query)
-                data = defaultdict(list)
-                for row in cursor.fetchall():
-                    for k, v in row.items():
-                        data[k].append(v)
-                return data
-
     def get(self, request, chart_id):
         chart = get_object_or_404(ChartBuilderChart, created_by=request.user, pk=chart_id)
         columns = request.GET.get("columns", "").split(",")
@@ -143,7 +109,7 @@ class ChartQueryResultsView(View):
             {
                 "total_rows": chart.query_log.rows,
                 "duration": chart.query_log.duration,
-                "data": self._get_rows(chart, columns),
+                "data": chart.get_table_data(columns),
             }
         )
 

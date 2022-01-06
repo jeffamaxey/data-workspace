@@ -3,16 +3,17 @@ from __future__ import unicode_literals
 import logging
 import re
 import uuid
+from collections import defaultdict
 
-from dynamic_models.models import AbstractFieldSchema, AbstractModelSchema  # noqa: I202
+import psycopg2
+from psycopg2 import sql
+
 from django.conf import settings
-from django.db import models
+from django.db import connections, models
+from django.urls import reverse
+from dynamic_models.models import AbstractFieldSchema, AbstractModelSchema  # noqa: I202
 
-try:
-    from django.urls import reverse
-except ImportError:
-    from django.core.urlresolvers import reverse
-
+from dataworkspace.apps.core.utils import USER_SCHEMA_STEM, db_role_schema_suffix_for_user
 from dataworkspace.apps.core.models import TimeStampedUserModel
 from dataworkspace.apps.explorer.constants import QueryLogState
 
@@ -170,5 +171,38 @@ class ChartBuilderChart(TimeStampedUserModel):
     class Meta:
         ordering = ("-created_date",)
 
+    def __str__(self):
+        return f"{self.title} ({self.created_by.get_full_name()})"
+
     def get_edit_url(self):
         return reverse("explorer:explorer-charts:edit-chart", args=(self.id,))
+
+    def get_table_details(self):
+        schema_name = f"{USER_SCHEMA_STEM}{db_role_schema_suffix_for_user(self.created_by)}"
+        return schema_name, f"_chart_builder_tmp_{self.query_log.id}"
+
+    def get_table_data(self, columns):
+        schema, table = self.get_table_details()
+        query = sql.SQL("SELECT {} from {}.{}").format(
+            sql.SQL(",").join(map(sql.Identifier, columns)),
+            sql.Identifier(schema),
+            sql.Identifier(table),
+        )
+        conn = connections[self.query_log.connection]
+        conn.ensure_connection()
+        cursor = conn.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(query)
+        data = defaultdict(list)
+        for row in cursor.fetchall():
+            for k, v in row.items():
+                data[k].append(v)
+        return data
+
+    def get_required_columns(self):
+        columns = []
+        for trace in self.chart_config.get("traces", []):
+            for column_name in trace["meta"].get("columnNames", {}).values():
+                columns.append(column_name)
+            if trace.get("textsrc", None) is not None:
+                columns.append(trace["textsrc"])
+        return columns

@@ -96,3 +96,11 @@ def format_date_uk(date: Optional[datetime.date]) -> Optional[str]:
         return None
 
     return date.strftime("%-d %B %Y")
+
+
+@register.simple_tag()
+def chart_link_or_plain_text(text, condition, dataset_uuid, object_id):
+    if condition:
+        url = reverse("datasets:dataset_chart", args=[dataset_uuid, object_id])
+        return mark_safe(f"<a class='govuk-link' href='{url}'>{text}</a>")
+    return text

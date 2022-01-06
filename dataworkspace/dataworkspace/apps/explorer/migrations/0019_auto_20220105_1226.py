@@ -6,19 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('explorer', '0018_chartbuilderchart_chart_config'),
+        ("explorer", "0018_chartbuilderchart_chart_config"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='chartbuilderchart',
-            name='description',
+            model_name="chartbuilderchart",
+            name="description",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='chartbuilderchart',
-            name='title',
-            field=models.CharField(default='', max_length=255),
+            model_name="chartbuilderchart",
+            name="title",
+            field=models.CharField(default="", max_length=255),
             preserve_default=False,
         ),
     ]

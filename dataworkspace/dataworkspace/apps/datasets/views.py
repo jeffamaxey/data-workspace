@@ -13,7 +13,7 @@ import logging
 import boto3
 import psycopg2
 from botocore.exceptions import ClientError
-from csp.decorators import csp_update
+from csp.decorators import csp_exempt, csp_update
 
 from psycopg2 import sql
 from django.conf import settings
@@ -1609,4 +1609,39 @@ class SourceChangelogView(WaffleFlagMixin, DetailView):
             dataset__id=self.kwargs.get("dataset_uuid"),
             pk=self.kwargs["source_id"],
             **{"dataset__published": True} if not self.request.user.is_superuser else {},
+        )
+
+
+class DatasetChartView(View):
+    @csp_exempt
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_object(self):
+        dataset = get_object_or_404(self.kwargs["model_class"], id=self.kwargs["dataset_uuid"])
+        return dataset.charts.get(id=self.kwargs["object_id"])
+
+    def get(self, request, **kwargs):
+        chart = self.get_object()
+        if not chart.dataset.user_has_access(request.user):
+            return HttpResponseForbidden()
+        return render(
+            request,
+            "datasets/chart.html",
+            context={
+                "chart": chart,
+            },
+        )
+
+    def post(self, request, **kwargs):
+        dataset_chart = self.get_object()
+        if not dataset_chart.dataset.user_has_access(request.user):
+            return HttpResponseForbidden()
+        chart = dataset_chart.chart
+        return JsonResponse(
+            {
+                "total_rows": chart.query_log.rows,
+                "duration": chart.query_log.duration,
+                "data": chart.get_table_data(chart.get_required_columns()),
+            }
         )

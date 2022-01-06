@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('explorer', '0019_auto_20220105_1226'),
+        ("explorer", "0019_auto_20220105_1226"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='chartbuilderchart',
-            options={'ordering': ('-created_date',)},
+            name="chartbuilderchart",
+            options={"ordering": ("-created_date",)},
         ),
     ]

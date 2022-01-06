@@ -456,6 +456,19 @@ class DataSetVisualisation(DeletableTimestampedUserModel):
     gds_phase_name = models.CharField(max_length=25, default="", blank=True)
 
 
+class DataSetChartBuilderChart(TimeStampedUserModel):
+    name = models.CharField(max_length=255)
+    summary = models.TextField()
+    chart = models.ForeignKey(
+        "explorer.ChartBuilderChart", on_delete=models.PROTECT, related_name="datasets"
+    )
+    dataset = models.ForeignKey(DataSet, on_delete=models.CASCADE, related_name="charts")
+    gds_phase_name = models.CharField(max_length=25, default="", blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class DataSetUserPermission(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     dataset = models.ForeignKey(DataSet, on_delete=models.CASCADE)

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('explorer', '0017_chartbuilderchart'),
+        ("explorer", "0017_chartbuilderchart"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='chartbuilderchart',
-            name='chart_config',
+            model_name="chartbuilderchart",
+            name="chart_config",
             field=models.JSONField(null=True),
         ),
     ]
