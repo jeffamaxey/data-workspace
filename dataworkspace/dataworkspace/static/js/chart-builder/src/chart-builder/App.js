@@ -133,7 +133,8 @@ class App extends React.Component {
       }
     })
     .catch((error) => {
-      alert('TODO: Save error notification message')
+      that.setState({ saveError: "Error saving your chart, please try again."})
+      throw new Error(error);
     });
   }
 
@@ -159,11 +160,7 @@ class App extends React.Component {
                 traceTypesConfig={availableCharts}
                 revision={this.state.editorRevision}
               >
-                <DefaultEditor>
-                 <Panel group="TODO" name="JSON">
-                   <h1>hi</h1>
-                 </Panel>
-                </DefaultEditor>
+                <DefaultEditor />
               </PlotlyEditor>
               <div className="govuk-grid-row chart-toolbar">
                 <div className="govuk-grid-column-one-third">
