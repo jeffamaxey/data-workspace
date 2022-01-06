@@ -1,6 +1,7 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
 
+import './App.css';
 import {getCookie} from "../chart-builder/utils/common";
 import {axisMap} from "../chart-builder/constants";
 
@@ -66,7 +67,12 @@ class App extends React.Component {
   render() {
     return (
       <div className="app">
-        {this.state.loadingData ? <h1>loading...</h1> :
+        {this.state.loadingData ?
+          <div className="govuk-grid-row">
+            <div className="govuk-!-margin-bottom-4 chart-loading-spinner"></div>
+            <p className="govuk-heading-s" style={{textAlign: "center"}}>Loading chart...</p>
+          </div>
+          :
            <Plot
               data={this.state.traces}
               layout={this.state.layout}
