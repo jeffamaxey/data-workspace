@@ -24,7 +24,7 @@
             </div>
           {% endif %}
           <h3 class="govuk-heading-s">
-            {% chart_link_or_plain_text visualisation.name has_access model.id chart.id %}
+            {% chart_link_or_plain_text chart.name has_access model.id chart.id %}
           </h3>
           <p class="govuk-body">
             {{ chart.summary }}
