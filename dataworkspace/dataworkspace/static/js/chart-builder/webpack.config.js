@@ -6,11 +6,11 @@ module.exports = {
   context: __dirname,
   mode: 'development',
   entry: {
-    main: [
+    builder: [
       'react-hot-loader/patch',
       'webpack-dev-server/client?http://0.0.0.0:3000',
       'webpack/hot/only-dev-server',
-      path.join(__dirname, './src/index')
+      path.join(__dirname, './src/chart-builder/index')
     ]
   },
   output: {
