@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import DeleteView, ListView, RedirectView
+from waffle.mixins import WaffleFlagMixin
 
 from dataworkspace import datasets_db
 from dataworkspace.apps.datasets.templatetags.datasets_tags import date_with_gmt_offset
@@ -16,7 +17,9 @@ from dataworkspace.apps.explorer.models import ChartBuilderChart, QueryLog
 from dataworkspace.apps.explorer.tasks import submit_query_for_execution
 
 
-class ChartCreateView(RedirectView):
+class ChartCreateView(WaffleFlagMixin, RedirectView):
+    waffle_flag = settings.CHART_BUILDER_BUILD_CHARTS_FLAG
+
     def get_redirect_url(self, *args, **kwargs):
         # Given a data explorer query log we need to save the results
         # of the full query to a database table to allow us to query
@@ -55,7 +58,8 @@ class ChartCreateView(RedirectView):
         return chart.get_edit_url() + "?new"
 
 
-class ChartEditView(View):
+class ChartEditView(WaffleFlagMixin, View):
+    waffle_flag = settings.CHART_BUILDER_BUILD_CHARTS_FLAG
     template_name = "explorer/charts/chart_builder.html"
 
     @csp_exempt
@@ -86,7 +90,9 @@ class ChartEditView(View):
         return JsonResponse({}, status=200)
 
 
-class ChartQueryStatusView(View):
+class ChartQueryStatusView(WaffleFlagMixin, View):
+    waffle_flag = settings.CHART_BUILDER_BUILD_CHARTS_FLAG
+
     def get(self, request, chart_id):
         try:
             chart = ChartBuilderChart.objects.get(created_by=request.user, pk=chart_id)
@@ -106,7 +112,9 @@ class ChartQueryStatusView(View):
         )
 
 
-class ChartQueryResultsView(View):
+class ChartQueryResultsView(WaffleFlagMixin, View):
+    waffle_flag = settings.CHART_BUILDER_BUILD_CHARTS_FLAG
+
     def get(self, request, chart_id):
         chart = get_object_or_404(ChartBuilderChart, created_by=request.user, pk=chart_id)
         return JsonResponse(
@@ -118,7 +126,8 @@ class ChartQueryResultsView(View):
         )
 
 
-class ChartListView(ListView):
+class ChartListView(WaffleFlagMixin, ListView):
+    waffle_flag = settings.CHART_BUILDER_BUILD_CHARTS_FLAG
     model = QueryLog
     context_object_name = "charts"
     template_name = "explorer/charts/chartbuilderchart_list.html"
@@ -127,7 +136,8 @@ class ChartListView(ListView):
         return ChartBuilderChart.objects.filter(created_by=self.request.user)
 
 
-class ChartDeleteView(DeleteView):
+class ChartDeleteView(WaffleFlagMixin, DeleteView):
+    waffle_flag = settings.CHART_BUILDER_BUILD_CHARTS_FLAG
     model = QueryLog
     success_url = reverse_lazy("explorer:explorer-charts:list-charts")
     pk_url_kwarg = "chart_id"

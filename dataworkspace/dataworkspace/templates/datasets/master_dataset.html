@@ -265,7 +265,9 @@
       {% endif %}
     </div>
   {% endif %}
-  {% include "partials/chart_builder_charts.html" %}
+  {% flag CHART_BUILDER_PUBLISH_CHARTS_FLAG %}
+    {% include "partials/chart_builder_charts.html" %}
+  {% endflag %}
 {% endblock %}
 
 {% block footer_scripts %}
