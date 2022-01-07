@@ -13,7 +13,7 @@ import logging
 import boto3
 import psycopg2
 from botocore.exceptions import ClientError
-from csp.decorators import csp_exempt, csp_update
+from csp.decorators import csp_update
 
 from psycopg2 import sql
 from django.conf import settings
@@ -1615,14 +1615,11 @@ class SourceChangelogView(WaffleFlagMixin, DetailView):
 class DatasetChartView(WaffleFlagMixin, View):
     waffle_flag = settings.CHART_BUILDER_PUBLISH_CHARTS_FLAG
 
-    @csp_exempt
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
     def get_object(self):
         dataset = get_object_or_404(self.kwargs["model_class"], id=self.kwargs["dataset_uuid"])
         return dataset.charts.get(id=self.kwargs["object_id"])
 
+    @csp_update(SCRIPT_SRC="'unsafe-eval'")
     def get(self, request, **kwargs):
         chart = self.get_object()
         if not chart.dataset.user_has_access(request.user):

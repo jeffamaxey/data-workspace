@@ -120,6 +120,8 @@ django-ckeditor==5.9.0
     # via -r requirements.txt
 django-compressor==2.4
     # via -r requirements.txt
+django-csp-helpers==0.6.2
+    # via -r requirements.txt
 django-csp==3.6
     # via -r requirements.txt
 django-db-geventpool==3.2.3
@@ -150,6 +152,7 @@ django==3.2.10
     #   django-admin-sortable2
     #   django-appconf
     #   django-csp
+    #   django-csp-helpers
     #   django-db-geventpool
     #   django-debug-toolbar
     #   django-dynamic-models-readonly

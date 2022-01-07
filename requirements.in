@@ -12,6 +12,7 @@ django-better-admin-arrayfield
 django-ckeditor
 django-compressor
 django-csp
+django-csp-helpers
 django-db-geventpool
 django-dynamic-models-readonly
 django-environ

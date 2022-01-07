@@ -1,6 +1,6 @@
 {% extends 'explorer/base.html' %}
 {% load static %}
-{% load render_bundle from webpack_loader %}
+{% load render_bundle_csp %}
 {% block title %}Edit your chart{% endblock title %}
 {% block main %}
   {{ chart.chart_config|json_script:"chartConfig" }}
@@ -11,5 +11,5 @@
       data-back-link="{{ back_link }}"
     ></div>
   </main>
-  {% render_bundle "builder" "js" %}
+  {% render_bundle_csp "builder" "js" %}
 {% endblock main %}

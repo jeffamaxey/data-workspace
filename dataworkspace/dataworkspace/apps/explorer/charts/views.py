@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from csp.decorators import csp_exempt
+from csp.decorators import csp_update
 from django.conf import settings
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -50,10 +50,7 @@ class ChartEditView(WaffleFlagMixin, View):
     waffle_flag = settings.CHART_BUILDER_BUILD_CHARTS_FLAG
     template_name = "explorer/charts/chart_builder.html"
 
-    @csp_exempt
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
+    @csp_update(SCRIPT_SRC="'unsafe-eval'")
     def get(self, request, chart_id):
         chart = get_object_or_404(ChartBuilderChart, created_by=request.user, pk=chart_id)
         return render(

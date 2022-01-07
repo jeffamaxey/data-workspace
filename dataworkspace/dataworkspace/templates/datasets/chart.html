@@ -1,6 +1,6 @@
 {% extends '_main.html' %}
 {% load humanize static datasets_tags %}
-{% load render_bundle from webpack_loader %}
+{% load render_bundle_csp %}
 {% block page_title %}{{ chart.name }} - {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   <div class="govuk-grid-row">
@@ -46,5 +46,5 @@
     </div>
   </div>
   {{ chart.chart.chart_config|json_script:"chartConfig" }}
-  {% render_bundle "viewer" "js" %}
+  {% render_bundle_csp "viewer" "js" %}
 {% endblock %}
