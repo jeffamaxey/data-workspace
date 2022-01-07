@@ -1,11 +1,5 @@
 .chart-loading-spinner {
-  /*border: 12px solid #ffffff;*/
-  /*border-radius: 50%;*/
-  /*border-top-color: #00703c;*/
   width: 30px;
   height: 30px;
   margin-top: 60px;
-  /*-webkit-animation: spin 2s linear infinite;*/
-  /*animation: spin 2s linear infinite;*/
-  /*margin: 0 auto;*/
 }
