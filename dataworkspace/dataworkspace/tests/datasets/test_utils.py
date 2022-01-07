@@ -1688,6 +1688,7 @@ class TestStoreReferenceDatasetMetadata:
             return cursor.fetchall()
 
     @pytest.mark.django_db
+    @freeze_time("2022-01-01 15:00:00")
     def test_new_metadata_record(self, metadata_db):
         # If no metadata record exists, create one
         rds = ReferenceDatasetFactory.create(published=True)
@@ -1707,15 +1708,14 @@ class TestStoreReferenceDatasetMetadata:
             sort_order=2,
             column_name="field2",
         )
-        with freeze_time("2022-01-01 15:00:00"):
-            rds.save_record(
-                None,
-                {
-                    "reference_dataset": rds,
-                    field1.column_name: 1,
-                    field2.column_name: "A record",
-                },
-            )
+        rds.save_record(
+            None,
+            {
+                "reference_dataset": rds,
+                field1.column_name: 1,
+                field2.column_name: "A record",
+            },
+        )
         num_metadata_records = len(self._get_metadata_records(metadata_db, rds.table_name))
         store_reference_dataset_metadata()
         metadata_records = self._get_metadata_records(metadata_db, rds.table_name)

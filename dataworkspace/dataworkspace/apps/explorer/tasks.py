@@ -132,7 +132,7 @@ def _run_query(conn, query_log, page, limit, timeout, output_table):
 
         limit_clause = ""
         if limit is not None:
-            limit_clause = f" LIMIT {limit}"
+            limit_clause = f"LIMIT {limit}"
 
         offset = ""
         if page and page > 1 and limit is not None:
@@ -209,12 +209,7 @@ def submit_query_for_execution(
         page_size=limit,
     )
 
-    _run_querylog_query.delay(
-        query_log.id,
-        page,
-        limit,
-        timeout,
-    )
+    _run_querylog_query.delay(query_log.id, page, limit, timeout)
 
     return query_log
 
