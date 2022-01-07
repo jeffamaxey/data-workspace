@@ -148,6 +148,8 @@ jsonlines==2.0.0
     # via tabulator
 jsonschema==3.2.0
     # via tableschema
+kaleido==0.2.1
+    # via -r requirements.in
 kombu==4.6.11
     # via celery
 linear-tsv==1.1.0
@@ -173,6 +175,8 @@ openpyxl==3.0.6
 packaging==20.4
     # via bleach
 paste==3.4.3
+    # via -r requirements.in
+plotly==5.5.0
     # via -r requirements.in
 psqlparse==1.0rc7
     # via -r requirements.in
@@ -244,6 +248,7 @@ six==1.15.0
     #   mohawk
     #   packaging
     #   paste
+    #   plotly
     #   psqlparse
     #   python-dateutil
     #   tableschema
@@ -262,7 +267,9 @@ tableschema==1.20.0
 tabulator==1.53.1
     # via tableschema
 tenacity==6.2.0
-    # via celery-redbeat
+    # via
+    #   celery-redbeat
+    #   plotly
 typing-extensions==4.0.0
     # via aiohttp
 unicodecsv==0.14.1

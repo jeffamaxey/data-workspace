@@ -14,7 +14,7 @@ from dataworkspace import datasets_db
 from dataworkspace.apps.datasets.templatetags.datasets_tags import date_with_gmt_offset
 from dataworkspace.apps.explorer.constants import QueryLogState
 from dataworkspace.apps.explorer.models import ChartBuilderChart, QueryLog
-from dataworkspace.apps.explorer.tasks import run_chart_builder_query
+from dataworkspace.apps.explorer.tasks import refresh_chart_thumbnail, run_chart_builder_query
 
 
 class ChartCreateView(WaffleFlagMixin, RedirectView):
@@ -75,6 +75,7 @@ class ChartEditView(WaffleFlagMixin, View):
         except KeyError:
             pass
         chart.save()
+        refresh_chart_thumbnail.delay(chart_id)
         return JsonResponse({}, status=200)
 
 
