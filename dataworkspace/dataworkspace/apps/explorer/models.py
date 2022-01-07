@@ -13,9 +13,8 @@ from django.db import connections, models
 from django.urls import reverse
 from dynamic_models.models import AbstractFieldSchema, AbstractModelSchema  # noqa: I202
 
-from dataworkspace.apps.core.utils import USER_SCHEMA_STEM, db_role_schema_suffix_for_user
 from dataworkspace.apps.core.models import TimeStampedUserModel
-from dataworkspace.apps.explorer.constants import QueryLogState
+from dataworkspace.apps.explorer.constants import CHART_BUILDER_SCHEMA, QueryLogState
 
 
 logger = logging.getLogger(__name__)
@@ -165,7 +164,6 @@ class ChartBuilderChart(TimeStampedUserModel):
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     query_log = models.ForeignKey(QueryLog, related_name="chart", on_delete=models.PROTECT)
-    original_query_log = models.ForeignKey(QueryLog, related_name="+", on_delete=models.DO_NOTHING)
     chart_config = models.JSONField(null=True)
 
     class Meta:
@@ -174,21 +172,20 @@ class ChartBuilderChart(TimeStampedUserModel):
     def __str__(self):
         return f"{self.title} ({self.created_by.get_full_name()})"
 
+    @property
+    def temp_table_name(self):
+        return f"{CHART_BUILDER_SCHEMA}._tmp_query_{self.query_log.id}"
+
     def get_edit_url(self):
         return reverse("explorer:explorer-charts:edit-chart", args=(self.id,))
 
-    def get_table_details(self):
-        schema_name = f"{USER_SCHEMA_STEM}{db_role_schema_suffix_for_user(self.created_by)}"
-        return schema_name, f"_data_explorer_tmp_query_{self.query_log.id}"
-
     def get_table_data(self, columns=None):
-        schema, table = self.get_table_details()
         query = sql.SQL("SELECT {} from {}.{}").format(
             sql.SQL(",").join(map(sql.Identifier, columns))
             if columns is not None
             else sql.SQL("*"),
-            sql.Identifier(schema),
-            sql.Identifier(table),
+            sql.Identifier(self.temp_table_name.split(".")[0]),
+            sql.Identifier(self.temp_table_name.split(".")[1]),
         )
         conn = connections[self.query_log.connection]
         conn.ensure_connection()

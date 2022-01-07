@@ -14,7 +14,7 @@ from dataworkspace import datasets_db
 from dataworkspace.apps.datasets.templatetags.datasets_tags import date_with_gmt_offset
 from dataworkspace.apps.explorer.constants import QueryLogState
 from dataworkspace.apps.explorer.models import ChartBuilderChart, QueryLog
-from dataworkspace.apps.explorer.tasks import submit_query_for_execution
+from dataworkspace.apps.explorer.tasks import run_chart_builder_query
 
 
 class ChartCreateView(WaffleFlagMixin, RedirectView):
@@ -27,34 +27,22 @@ class ChartCreateView(WaffleFlagMixin, RedirectView):
         original_query_log = get_object_or_404(
             QueryLog, pk=kwargs["query_log_id"], run_by_user=self.request.user
         )
-
-        # If we've already created a chart from this query then use
-        # the existing model
-        try:
-            chart = ChartBuilderChart.objects.get(
-                created_by=self.request.user, original_query_log=original_query_log
-            )
-        except ChartBuilderChart.DoesNotExist:
-            # Otherwise create a new chart and execute the query
-            # We need to re-execute the query to get all the records into the output table
-            query_log = submit_query_for_execution(
-                original_query_log.sql,
-                original_query_log.connection,
-                original_query_log.query_id,
-                self.request.user.id,
-                1,
-                None,
-                settings.EXPLORER_QUERY_TIMEOUT_MS,
-            )
-            title = f"New chart ({date_with_gmt_offset(datetime.now())})"
-            chart = ChartBuilderChart.objects.create(
-                title=title,
-                created_by=self.request.user,
-                query_log=query_log,
-                original_query_log_id=kwargs["query_log_id"],
-                chart_config={"layout": {"title": {"text": title}}},
-            )
-
+        query_log = QueryLog.objects.create(
+            sql=original_query_log.sql,
+            query_id=original_query_log.query_id,
+            run_by_user=self.request.user,
+            connection=original_query_log.connection,
+            page=1,
+            page_size=None,
+        )
+        title = f"New chart ({date_with_gmt_offset(datetime.now())})"
+        chart = ChartBuilderChart.objects.create(
+            title=title,
+            created_by=self.request.user,
+            query_log=query_log,
+            chart_config={"layout": {"title": {"text": title}}},
+        )
+        run_chart_builder_query.delay(chart.id)
         return chart.get_edit_url() + "?new"
 
 
@@ -73,7 +61,7 @@ class ChartEditView(WaffleFlagMixin, View):
             self.template_name,
             context={
                 "chart": chart,
-                "back_link": reverse("explorer:running_query", args=(chart.original_query_log.id,))
+                "back_link": reverse("explorer:running_query", args=(chart.query_log.id,))
                 if "new" in request.GET
                 else reverse("explorer:explorer-charts:list-charts"),
             },

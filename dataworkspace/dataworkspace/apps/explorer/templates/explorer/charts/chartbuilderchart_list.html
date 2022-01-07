@@ -2,7 +2,7 @@
 {% load explorer_tags useful datasets_tags %}
 {% block title %}Data Explorer - Charts{% endblock %}
 {% block content %}
-  <h1 class="govuk-heading-xl govuk-!-margin-bottom-6">Saved charts</h1>
+  <h1 class="govuk-heading-xl govuk-!-margin-bottom-6">Your charts</h1>
   <p class="govuk-body govuk-!-margin-bottom-7">
     View charts you've created from your <a href="{% url 'explorer:index' %}" class="govuk-link govuk-link--no-visited-state">Data Explorer</a>
     queries
@@ -15,6 +15,7 @@
           <th scope="col" class="govuk-table__header">Title</th>
           <th scope="col" class="govuk-table__header">Date created</th>
           <th scope="col" class="govuk-table__header">Published</th>
+          <th scope="col" class="govuk-table__header">Actions</th>
         </tr>
         </thead>
         <tbody class="govuk-table__body">
@@ -30,6 +31,11 @@
               </td>
               <td class="name govuk-table__cell">
                 {% if chart.is_published %}Yes{% else %}No{% endif %}
+              </td>
+              <td class="name govuk-table__cell">
+                <a href="{% url 'explorer:explorer-charts:delete-chart' chart.id %}" class="govuk-link govuk-link--no-visited-state">
+                  Delete
+                </a>
               </td>
             </tr>
           {% empty %}

@@ -173,7 +173,7 @@ class App extends React.Component {
                     Delete Chart
                   </a>
                   <button className="govuk-button govuk-button--secondary" onClick={() => this.resetChart()}>
-                    Reset Chart
+                    Clear Chart
                   </button>
                   <button className="govuk-button" onClick={() => this.saveChart()}>
                     Save Chart

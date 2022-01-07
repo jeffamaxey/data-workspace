@@ -1,5 +1,7 @@
 from django.db import models
 
+CHART_BUILDER_SCHEMA = "_data_explorer_charts"
+
 
 class QueryLogState(models.IntegerChoices):
     RUNNING = 0, "Running"
