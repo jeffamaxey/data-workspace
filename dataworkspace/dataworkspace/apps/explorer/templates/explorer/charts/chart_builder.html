@@ -5,7 +5,6 @@
 {% block main %}
   {{ chart.chart_config|json_script:"chartConfig" }}
   <main class="govuk-main-wrapper" style="padding: 0;">
-    <h1>{{ request.GET.new }}</h1>
     <div
       id="chart-builder-app"
       data-chart-id="{{ chart.id }}"

@@ -5,7 +5,7 @@ import 'react-chart-editor/lib/react-chart-editor.css';
 
 import './App.css';
 import {availableCharts, axisMap, queryStates} from "./constants";
-import LoadingSpinner from "./components/LoadingSpinner";
+import LoadingModal from "./components/LoadingModal";
 import { getCookie } from "./utils/common";
 import ErrorModal from "./components/ErrorModal";
 
@@ -95,14 +95,26 @@ class App extends React.Component {
   }
 
   showStatusModal = () => {
-    if (this.state.queryRunning) return <LoadingSpinner message="Running query" />;
-    if (this.state.loadingData) return <LoadingSpinner message="Fetching data" />;
-    if (this.state.savingChart) return <LoadingSpinner message="Saving chart" />;
+    if (this.state.queryRunning) return <LoadingModal message="Running query" />;
+    if (this.state.loadingData) return <LoadingModal message="Fetching data" />;
+    if (this.state.savingChart) return <LoadingModal message="Saving chart" />;
     if (this.state.queryError) {
-      return <ErrorModal title="Failed to run your query" message={this.state.queryError} />;
+      return (
+        <ErrorModal
+          title="Failed to run your query"
+          message={this.state.queryError}
+          backLink={this.props.backLink}
+        />
+      );
     }
     if (this.state.saveError) {
-      return <ErrorModal title="Failed to save your chart" message={this.state.saveError} />;
+      return (
+        <ErrorModal
+          title="Failed to save your chart"
+          message={this.state.saveError}
+          backLink={this.props.backLink}
+        />
+      );
     }
   }
 

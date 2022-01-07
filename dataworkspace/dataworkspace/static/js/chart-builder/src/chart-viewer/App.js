@@ -61,7 +61,7 @@ class App extends React.Component {
       <div className="app">
         {this.state.loadingData ?
           <div className="govuk-grid-row">
-            <div className="govuk-!-margin-bottom-4 chart-loading-spinner" />
+            <div className="govuk-!-margin-bottom-4 loading-spinner chart-loading-spinner" />
             <p className="govuk-heading-s" style={{textAlign: "center"}}>Loading chart...</p>
           </div>
           :
