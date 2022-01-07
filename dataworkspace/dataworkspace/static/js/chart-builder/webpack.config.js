@@ -20,7 +20,7 @@ module.exports = {
     ]
   },
   output: {
-    path: path.resolve('./bundles/'),
+    path: path.resolve('../bundles/'),
     filename: "[name]-[fullhash].js",
     publicPath: 'http://0.0.0.0:3000/js/builds/',
   },
