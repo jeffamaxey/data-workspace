@@ -3155,6 +3155,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-schema": source_table.schema,
                 "sourcetable_set-0-frequency": source_table.frequency,
                 "sourcetable_set-0-table": source_table.table,
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3208,6 +3212,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-schema": source_table.schema,
                 "sourcetable_set-0-frequency": source_table.frequency,
                 "sourcetable_set-0-table": source_table.table,
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3270,6 +3278,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-schema": source_table.schema,
                 "sourcetable_set-0-frequency": source_table.frequency,
                 "sourcetable_set-0-table": source_table.table,
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3323,6 +3335,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-schema": source_table.schema,
                 "sourcetable_set-0-frequency": source_table.frequency,
                 "sourcetable_set-0-table": source_table.table,
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3366,6 +3382,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-table": "test_table",
                 "sourcetable_set-0-data_grid_enabled": "on",
                 "sourcetable_set-0-data_grid_column_config": "",
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3408,6 +3428,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-table": "test_table",
                 "sourcetable_set-0-data_grid_enabled": "on",
                 "sourcetable_set-0-data_grid_column_config": '[{"field": "test"}]',
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3450,6 +3474,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-table": "test_table",
                 "sourcetable_set-0-data_grid_enabled": "on",
                 "sourcetable_set-0-data_grid_column_config": '{"columns":[{"field": "test"}, []]}',
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3492,6 +3520,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-table": "test_table",
                 "sourcetable_set-0-data_grid_enabled": "on",
                 "sourcetable_set-0-data_grid_column_config": '{"columns": [{"field": "test"}, {"sortable": false}]}',
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3538,6 +3570,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-data_grid_column_config": (
                     '{"columns": [{"field": "test"}, {"field": "test2", "sortable": true}]}'
                 ),
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
@@ -3578,6 +3614,10 @@ class TestDatasetAdminPytest:
                 "sourcetable_set-0-frequency": 1,
                 "sourcetable_set-0-table": "test_table",
                 "sourcetable_set-0-data_grid_column_config": '{"columns": [{"field": "test"}]}',
+                "charts-TOTAL_FORMS": "1",
+                "charts-INITIAL_FORMS": "0",
+                "charts-MIN_NUM_FORMS": "0",
+                "charts-MAX_NUM_FORMS": "1000",
             },
             follow=True,
         )
