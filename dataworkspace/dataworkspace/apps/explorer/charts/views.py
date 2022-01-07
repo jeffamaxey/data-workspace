@@ -43,7 +43,7 @@ class ChartCreateView(WaffleFlagMixin, RedirectView):
             chart_config={"layout": {"title": {"text": title}}},
         )
         run_chart_builder_query.delay(chart.id)
-        return chart.get_edit_url() + "?new"
+        return chart.get_edit_url() + f"?ql={original_query_log.id}"
 
 
 class ChartEditView(WaffleFlagMixin, View):
@@ -61,8 +61,8 @@ class ChartEditView(WaffleFlagMixin, View):
             self.template_name,
             context={
                 "chart": chart,
-                "back_link": reverse("explorer:running_query", args=(chart.query_log.id,))
-                if "new" in request.GET
+                "back_link": reverse("explorer:running_query", args=(request.GET.get("ql"),))
+                if "ql" in request.GET
                 else reverse("explorer:explorer-charts:list-charts"),
             },
         )
