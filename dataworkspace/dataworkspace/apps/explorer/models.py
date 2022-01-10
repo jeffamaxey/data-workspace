@@ -236,7 +236,7 @@ class ChartBuilderChart(TimeStampedUserModel):
             trace[axis_data.get("x", "x")] = chart_data[trace[axis_data["xsrc"]]]
             trace[axis_data.get("y", "y")] = chart_data[trace[axis_data["ysrc"]]]
             if "textsrc" in trace:
-                trace["text"] = chart_data[trace.textsrc]
+                trace["text"] = chart_data[trace["textsrc"]]
             config["data"].append(trace)
 
         with closing(io.BytesIO()) as outfile:
