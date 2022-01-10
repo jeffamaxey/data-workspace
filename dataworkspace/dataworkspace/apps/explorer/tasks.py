@@ -92,6 +92,24 @@ def _mark_query_log_failed(query_log, exc):
     query_log.save()
 
 
+@celery_app.task()
+@close_all_connections_if_not_in_atomic_block
+def _run_querylog_query(query_log_id, page, limit, timeout):
+    query_log = QueryLog.objects.get(id=query_log_id)
+    user_connection_settings = get_user_explorer_connection_settings(
+        query_log.run_by_user, query_log.connection
+    )
+    with user_explorer_connection(user_connection_settings) as conn:
+        _run_query(
+            conn,
+            query_log,
+            page,
+            limit,
+            timeout,
+            tempory_query_table_name(query_log.run_by_user, query_log.id),
+        )
+
+
 def _run_query(conn, query_log, page, limit, timeout, output_table):
     cursor = conn.cursor()
     start_time = time()
@@ -164,24 +182,6 @@ def _run_query(conn, query_log, page, limit, timeout, output_table):
 
 @celery_app.task()
 @close_all_connections_if_not_in_atomic_block
-def _run_querylog_query(query_log_id, page, limit, timeout):
-    query_log = QueryLog.objects.get(id=query_log_id)
-    user_connection_settings = get_user_explorer_connection_settings(
-        query_log.run_by_user, query_log.connection
-    )
-    with user_explorer_connection(user_connection_settings) as conn:
-        _run_query(
-            conn,
-            query_log,
-            page,
-            limit,
-            timeout,
-            tempory_query_table_name(query_log.run_by_user, query_log.id),
-        )
-
-
-@celery_app.task()
-@close_all_connections_if_not_in_atomic_block
 def run_chart_builder_query(chart_id):
     chart = ChartBuilderChart.objects.get(id=chart_id)
     query_log = chart.query_log
@@ -225,6 +225,7 @@ def refresh_chart_thumbnail(chart_id):
 def refresh_published_chart_data():
     for chart in ChartBuilderChart.objects.filter(datasets__isnull=False):
         original_query_log = chart.query_log
+        original_table_name = chart.get_temp_table_name()
         chart.query_log = QueryLog.objects.create(
             sql=original_query_log.sql,
             query_id=original_query_log.query_id,
@@ -236,3 +237,6 @@ def refresh_published_chart_data():
         chart.save()
         run_chart_builder_query(chart.id)
         chart.refresh_thumbnail()
+        with psycopg2.connect(database_dsn(DATABASES_DATA[original_query_log.connection])) as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"DROP TABLE IF EXISTS {original_table_name}")
