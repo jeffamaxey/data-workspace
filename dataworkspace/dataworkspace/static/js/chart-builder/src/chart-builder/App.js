@@ -1,5 +1,5 @@
 import React from 'react';
-import PlotlyEditor, {DefaultEditor, Panel} from 'react-chart-editor';
+import PlotlyEditor, {DefaultEditor} from 'react-chart-editor';
 import plotly from 'plotly.js/dist/plotly';
 import 'react-chart-editor/lib/react-chart-editor.css';
 
@@ -8,6 +8,8 @@ import {availableCharts, axisMap, queryStates} from "./constants";
 import LoadingModal from "./components/LoadingModal";
 import { getCookie } from "./utils/common";
 import ErrorModal from "./components/ErrorModal";
+
+DefaultEditor.hasTransforms = () => false;
 
 class App extends React.Component {
   constructor(props) {
@@ -130,7 +132,20 @@ class App extends React.Component {
       body: JSON.stringify({
         config: {
           traces: this.state.traces.map(chart => {
-            return {...chart, x: [], y: [], lat: [], lon: [], text: []}
+            return {
+              ...chart,
+              x: [],
+              y: [],
+              lat: [],
+              lon: [],
+              text: [],
+              // Our problem is transforms do not currently get updated when
+              // the table is updated
+              // transforms: chart.transforms ? chart.transforms.map(transform => {
+              //   transform.target = [];
+              //   return transform;
+              // }) : [],
+            }
           }),
           layout: this.state.layout,
           frames: this.state.frames,
