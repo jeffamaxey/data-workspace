@@ -83,7 +83,9 @@ class ChartQueryStatusView(WaffleFlagMixin, View):
         try:
             chart = ChartBuilderChart.objects.get(created_by=request.user, pk=chart_id)
         except ChartBuilderChart.DoesNotExist:
-            return JsonResponse({"state": QueryLogState.FAILED, "error": "Query does not exist"})
+            return JsonResponse(
+                {"state": QueryLogState.FAILED, "error": "Query does not exist"}, status=404
+            )
 
         return JsonResponse(
             {

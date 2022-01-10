@@ -1616,7 +1616,11 @@ class DatasetChartView(WaffleFlagMixin, View):
     waffle_flag = settings.CHART_BUILDER_PUBLISH_CHARTS_FLAG
 
     def get_object(self):
-        dataset = get_object_or_404(self.kwargs["model_class"], id=self.kwargs["dataset_uuid"])
+        dataset = get_object_or_404(
+            self.kwargs["model_class"],
+            id=self.kwargs["dataset_uuid"],
+            **{"published": True} if not self.request.user.is_superuser else {},
+        )
         return dataset.charts.get(id=self.kwargs["object_id"])
 
     @csp_update(SCRIPT_SRC="'unsafe-eval'")
