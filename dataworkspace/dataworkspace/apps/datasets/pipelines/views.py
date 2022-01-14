@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.urls.base import reverse_lazy
+from django.views.generic import DetailView
 from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.urls import reverse
@@ -59,3 +60,11 @@ class PipelineDeleteView(DeleteView, UserPassesTestMixin):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Pipeline deleted successfully.")
         return super().delete(request, *args, **kwargs)
+
+
+class PipelineLogsDetailView(DetailView, UserPassesTestMixin):
+    model = Pipeline
+    template_name = "datasets/pipelines/logs.html"
+
+    def test_func(self):
+        return self.request.user.is_superuser
