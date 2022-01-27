@@ -1,6 +1,4 @@
-import requests, json
-import logging
-
+import requests, json, logging
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import HttpResponseRedirect
@@ -13,6 +11,8 @@ from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.urls import reverse
 from requests import RequestException
+
+from mohawk import Sender
 
 from mohawk import Sender
 
