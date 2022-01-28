@@ -17,6 +17,7 @@ from requests import HTTPError
 
 from dataworkspace.apps.core.utils import (
     db_role_schema_suffix_for_user,
+    get_all_schemas,
     get_s3_prefix,
     get_team_schemas_for_user,
     is_user_in_teams,
@@ -109,9 +110,14 @@ class CreateTableConfirmSchemaView(RequiredParameterGetRequestMixin, FormView):
         return kwargs
 
     def form_valid(self, form):
+        all_schemas = get_all_schemas()
         user_schema = get_schema_for_user(self.request.user)
         team_schemas = get_team_schemas_for_user(self.request.user)
-        schemas = [{"name": "user", "schema_name": user_schema}] + team_schemas
+        schemas = (
+            [{"name": "user", "schema_name": user_schema}]
+            + [{"name": schema, "schema_name": schema} for schema in all_schemas]
+            + team_schemas
+        )
         schema_name = [
             schema["schema_name"]
             for schema in schemas

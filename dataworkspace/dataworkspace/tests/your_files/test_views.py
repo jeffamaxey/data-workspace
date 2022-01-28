@@ -169,17 +169,20 @@ class TestCreateTableViews:
 
     @mock.patch("dataworkspace.apps.your_files.forms.get_schema_for_user")
     @mock.patch("dataworkspace.apps.your_files.forms.get_team_schemas_for_user")
+    @mock.patch("dataworkspace.apps.your_files.forms.get_all_schemas")
     @mock.patch("dataworkspace.apps.your_files.utils.boto3.client")
     @mock.patch("dataworkspace.apps.your_files.forms.get_s3_prefix")
     def test_confirm_schema_with_teams(
         self,
         mock_get_s3_prefix,
         mock_boto_client,
+        mock_get_all_schemas,
         mock_get_team_schemas_for_user,
         mock_get_schema_for_user,
         client,
     ):
         mock_get_s3_prefix.return_value = "user/federated/abc"
+        mock_get_all_schemas.return_value = ["public", "dit"]
         mock_get_schema_for_user.return_value = "test_schema"
         mock_get_team_schemas_for_user.return_value = [
             {"name": "TeamA", "schema_name": "_team_a_schema"},
@@ -201,23 +204,28 @@ class TestCreateTableViews:
             },
             follow=True,
         )
+        assert b"public" in response.content
+        assert b"dit" in response.content
         assert b"test_schema (your private schema)" in response.content
         assert b"_team_a_schema (TeamA shared schema)" in response.content
         assert b"_team_b_schema (TeamB shared schema)" in response.content
 
     @mock.patch("dataworkspace.apps.your_files.forms.get_schema_for_user")
     @mock.patch("dataworkspace.apps.your_files.forms.get_team_schemas_for_user")
+    @mock.patch("dataworkspace.apps.your_files.forms.get_all_schemas")
     @mock.patch("dataworkspace.apps.your_files.utils.boto3.client")
     @mock.patch("dataworkspace.apps.your_files.forms.get_s3_prefix")
     def test_confirm_schema_without_teams(
         self,
         mock_get_s3_prefix,
         mock_boto_client,
+        mock_get_all_schemas,
         mock_get_team_schemas_for_user,
         mock_get_schema_for_user,
         client,
     ):
         mock_get_s3_prefix.return_value = "user/federated/abc"
+        mock_get_all_schemas.return_value = ["public", "dit"]
         mock_get_schema_for_user.return_value = "test_schema"
         mock_get_team_schemas_for_user.return_value = []
 
@@ -236,6 +244,8 @@ class TestCreateTableViews:
             },
             follow=True,
         )
+        assert b"public" in response.content
+        assert b"dit" in response.content
         assert b"test_schema (your private schema)" in response.content
         assert b"shared schema" not in response.content
 
