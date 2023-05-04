@@ -31,7 +31,7 @@ EXPLORER_PARAM_TOKEN = "$$"
 
 
 def param(name):
-    return "%s%s%s" % (EXPLORER_PARAM_TOKEN, name, EXPLORER_PARAM_TOKEN)
+    return f"{EXPLORER_PARAM_TOKEN}{name}{EXPLORER_PARAM_TOKEN}"
 
 
 def safe_login_prompt(request):
@@ -74,16 +74,12 @@ def get_params_from_request(request):
 
 def url_get_rows(request):
     rows = request.POST.get("query-rows", str(settings.EXPLORER_DEFAULT_ROWS))
-    if not rows.isnumeric():
-        return settings.EXPLORER_DEFAULT_ROWS
-    return int(rows)
+    return int(rows) if rows.isnumeric() else settings.EXPLORER_DEFAULT_ROWS
 
 
 def url_get_page(request):
     page = request.POST.get("query-page", "1")
-    if not page.isnumeric():
-        return 1
-    return int(page)
+    return int(page) if page.isnumeric() else 1
 
 
 def url_get_query_id(request):
@@ -144,8 +140,7 @@ def get_user_explorer_connection_settings(user, alias):
 
     if alias not in connections:
         raise InvalidExplorerConnectionException(
-            "Attempted to access connection %s, but that is not a registered Explorer connection."
-            % alias
+            f"Attempted to access connection {alias}, but that is not a registered Explorer connection."
         )
 
     def get_available_user_connections(_user_credentials):
@@ -206,8 +201,7 @@ def remove_data_explorer_user_cached_credentials(user):
 
 
 def invalidate_data_explorer_user_cached_credentials():
-    credentials_version = cache.get(credentials_version_key, None)
-    if credentials_version:
+    if credentials_version := cache.get(credentials_version_key, None):
         cache.incr(credentials_version_key)
 
 

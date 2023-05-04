@@ -482,13 +482,11 @@ def sorted_datasets_and_visualisations_matching_query_for_user(
 
     sort_fields = sort_by.split(",")
 
-    all_datasets = (
+    return (
         master_and_datacut_datasets.union(reference_datasets)
         .union(visualisations)
         .order_by(*sort_fields)
     )
-
-    return all_datasets
 
 
 def has_unpublished_dataset_access(user):
@@ -509,22 +507,21 @@ def find_datasets(request):
         "data_type"
     ].choices  # Cache these now, as we annotate them with result numbers later which we don't want here.
 
-    if form.is_valid():
-        query = form.cleaned_data.get("q")
-        unpublished = "unpublished" in form.cleaned_data.get("admin_filters")
-        open_data = "opendata" in form.cleaned_data.get("admin_filters")
-        with_visuals = "withvisuals" in form.cleaned_data.get("admin_filters")
-        use = set(form.cleaned_data.get("use"))
-        data_type = set(form.cleaned_data.get("data_type", []))
-        sort = form.cleaned_data.get("sort")
-        source_ids = set(source.id for source in form.cleaned_data.get("source"))
-        topic_ids = set(topic.id for topic in form.cleaned_data.get("topic"))
-        bookmarked = form.cleaned_data.get("bookmarked")
-        user_accessible = set(form.cleaned_data.get("user_access", [])) == {"yes"}
-        user_inaccessible = set(form.cleaned_data.get("user_access", [])) == {"no"}
-    else:
+    if not form.is_valid():
         return HttpResponseRedirect(reverse("datasets:find_datasets"))
 
+    query = form.cleaned_data.get("q")
+    unpublished = "unpublished" in form.cleaned_data.get("admin_filters")
+    open_data = "opendata" in form.cleaned_data.get("admin_filters")
+    with_visuals = "withvisuals" in form.cleaned_data.get("admin_filters")
+    use = set(form.cleaned_data.get("use"))
+    data_type = set(form.cleaned_data.get("data_type", []))
+    sort = form.cleaned_data.get("sort")
+    source_ids = {source.id for source in form.cleaned_data.get("source")}
+    topic_ids = {topic.id for topic in form.cleaned_data.get("topic")}
+    bookmarked = form.cleaned_data.get("bookmarked")
+    user_accessible = set(form.cleaned_data.get("user_access", [])) == {"yes"}
+    user_inaccessible = set(form.cleaned_data.get("user_access", [])) == {"no"}
     all_datasets_visible_to_user_matching_query = (
         sorted_datasets_and_visualisations_matching_query_for_user(
             query=query,
@@ -544,9 +541,9 @@ def find_datasets(request):
             lambda d: _matches_filters(
                 d,
                 bookmarked,
-                bool(unpublished),
-                bool(open_data),
-                bool(with_visuals),
+                unpublished,
+                open_data,
+                with_visuals,
                 use,
                 data_type,
                 source_ids,
@@ -623,18 +620,15 @@ class DatasetDetailView(DetailView):
         return super().get(request, *args, **kwargs)
 
     def _get_source_text(self, model):
-        source_text = ",".join(
+        return ",".join(
             sorted({t.name for t in self.object.tags.filter(type=TagType.SOURCE)})
         )
-        return source_text
 
     def _get_user_tools_access(self) -> bool:
-        user_has_tools_access = self.request.user.user_permissions.filter(
+        return self.request.user.user_permissions.filter(
             codename="start_all_applications",
             content_type=ContentType.objects.get_for_model(ApplicationInstance),
         ).exists()
-
-        return user_has_tools_access
 
     def _get_context_data_for_master_dataset(self, ctx, **kwargs):
         source_tables = sorted(self.object.sourcetable_set.all(), key=lambda x: x.name)
@@ -919,9 +913,9 @@ class ReferenceDatasetDownloadView(DetailView):
             records.append(record_data)
 
         response = HttpResponse()
-        response["Content-Disposition"] = "attachment; filename={}-{}.{}".format(
-            ref_dataset.slug, ref_dataset.published_version, dl_format
-        )
+        response[
+            "Content-Disposition"
+        ] = f"attachment; filename={ref_dataset.slug}-{ref_dataset.published_version}.{dl_format}"
 
         log_event(
             request.user,
@@ -1082,9 +1076,7 @@ class CustomDatasetQueryDownloadView(DetailView):
         dataset.save(update_fields=["number_of_downloads"])
 
         filtered_query = sql.SQL(query.query)
-        columns = request.GET.getlist("columns")
-
-        if columns:
+        if columns := request.GET.getlist("columns"):
             trimmed_query = query.query.rstrip().rstrip(";")
 
             filtered_query = sql.SQL("SELECT {fields} from ({query}) as data;").format(
@@ -1129,9 +1121,7 @@ class DatasetPreviewView(DetailView, metaclass=ABCMeta):
                 sample_size,
             )
             for row in rows:
-                record_data = {}
-                for i, column in enumerate(columns):
-                    record_data[column] = row[i]
+                record_data = {column: row[i] for i, column in enumerate(columns)}
                 records.append(record_data)
 
         can_download = source_object.can_show_link_for_user(user)
@@ -1289,9 +1279,11 @@ class DataCutPreviewView(WaffleFlagMixin, DetailView):
     template_name = "datasets/data_cut_preview.html"
 
     def dispatch(self, request, *args, **kwargs):
-        if not self.get_object().dataset.user_has_access(self.request.user):
-            return HttpResponseForbidden()
-        return super().dispatch(request, *args, **kwargs)
+        return (
+            super().dispatch(request, *args, **kwargs)
+            if self.get_object().dataset.user_has_access(self.request.user)
+            else HttpResponseForbidden()
+        )
 
     def get_object(self, queryset=None):
         return get_object_or_404(self.kwargs["model_class"], pk=self.kwargs["object_id"])
@@ -1421,9 +1413,11 @@ class DataGridDataView(DetailView):
         )
 
     def dispatch(self, request, *args, **kwargs):
-        if not self._user_can_access():
-            return HttpResponseForbidden()
-        return super().dispatch(request, *args, **kwargs)
+        return (
+            super().dispatch(request, *args, **kwargs)
+            if self._user_can_access()
+            else HttpResponseForbidden()
+        )
 
     @staticmethod
     def _get_rows(source, query, query_params):

@@ -1896,8 +1896,7 @@ class TestReferenceDatasetAdmin(BaseAdminTestCase):
         )
         self.assertContains(
             response,
-            'The Reference dataset “<a href="/admin/datasets/referencedataset/{}/change/">'
-            "test updated</a>” was changed successfully.".format(ref_ds1.id),
+            f'The Reference dataset “<a href="/admin/datasets/referencedataset/{ref_ds1.id}/change/">test updated</a>” was changed successfully.',
             html=True,
         )
 
@@ -1947,9 +1946,7 @@ class TestReferenceDatasetAdmin(BaseAdminTestCase):
         )
         self.assertContains(
             response,
-            "Linked reference dataset does not exist on external database {}".format(
-                db.memorable_name
-            ),
+            f"Linked reference dataset does not exist on external database {db.memorable_name}",
         )
 
     def test_link_to_external_dataset(self):
@@ -2002,8 +1999,7 @@ class TestReferenceDatasetAdmin(BaseAdminTestCase):
         )
         self.assertContains(
             response,
-            'The Reference dataset “<a href="/admin/datasets/referencedataset/{}/change/">'
-            "linked from</a>” was added successfully.".format(ReferenceDataset.objects.last().id),
+            f'The Reference dataset “<a href="/admin/datasets/referencedataset/{ReferenceDataset.objects.last().id}/change/">linked from</a>” was added successfully.',
             html=True,
         )
 

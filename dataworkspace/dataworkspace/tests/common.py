@@ -44,14 +44,16 @@ class BaseTestCaseMixin:
 
     @staticmethod
     def _create_reference_dataset(**kwargs):
-        ref_data_fields = dict(
-            name="Test Reference Dataset 1",
-            table_name="ref_test_dataset",
-            short_description="Testing...",
-            slug="test-reference-dataset-1",
-            published=True,
+        ref_data_fields = (
+            dict(
+                name="Test Reference Dataset 1",
+                table_name="ref_test_dataset",
+                short_description="Testing...",
+                slug="test-reference-dataset-1",
+                published=True,
+            )
+            | kwargs
         )
-        ref_data_fields.update(kwargs)
         return ReferenceDataset.objects.create(**ref_data_fields)
 
 

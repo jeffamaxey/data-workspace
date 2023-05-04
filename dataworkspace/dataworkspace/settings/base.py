@@ -210,7 +210,7 @@ CACHES = {
 # login, which mitigates the risk of session fixation attack. Using the same
 # cookie also means there are fewer cases to consider in terms of cookie
 # expiration.
-SESSION_COOKIE_NAME = ("__Secure-" if not LOCAL else "") + "data_workspace_session"
+SESSION_COOKIE_NAME = ("" if LOCAL else "__Secure-") + "data_workspace_session"
 root_domain_no_port, _, _ = env["APPLICATION_ROOT_DOMAIN"].partition(":")
 SESSION_COOKIE_DOMAIN = root_domain_no_port
 SESSION_COOKIE_SECURE = not LOCAL
@@ -218,7 +218,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 
 CSRF_COOKIE_SECURE = not LOCAL
-CSRF_COOKIE_NAME = ("__Secure-" if not LOCAL else "") + "data_workspace_csrf"
+CSRF_COOKIE_NAME = ("" if LOCAL else "__Secure-") + "data_workspace_csrf"
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -468,7 +468,7 @@ STATIC_ROOT = "/home/django/static/"
 STATIC_URL = "/__django_static/"
 
 
-CKEDITOR_BASEPATH = STATIC_URL + "ckeditor/ckeditor/"
+CKEDITOR_BASEPATH = f"{STATIC_URL}ckeditor/ckeditor/"
 
 
 REST_FRAMEWORK = {
@@ -522,10 +522,10 @@ TEMPLATES += [
 
 
 def sort_database_config(database_list):
-    config = {}
-    for database in database_list:
-        config[database["name"]] = database["credentials"]["uri"]
-    return config
+    return {
+        database["name"]: database["credentials"]["uri"]
+        for database in database_list
+    }
 
 
 EXPLORER_CONNECTIONS = json.loads(env.get("EXPLORER_CONNECTIONS", "{}"))

@@ -27,22 +27,22 @@ class _DatasetMatch:
 
 
 def group_tables_by_master_dataset(matches: List[_TableMatchResult], user) -> List[_DatasetMatch]:
-    if matches == []:
+    if not matches:
         return []
 
     match_table_filter = reduce(
         operator.or_, (Q(schema=match.schema, table=match.table) for match in matches)
     )
 
-    table_to_master_map = {}
-    for source_table in SourceTable.objects.filter(match_table_filter):
-        table_to_master_map[(source_table.schema, source_table.table)] = {
+    table_to_master_map = {
+        (source_table.schema, source_table.table): {
             "id": source_table.dataset.id,
             "slug": source_table.dataset.slug,
             "name": source_table.dataset.name,
             "has_access": source_table.dataset.user_has_access(user),
         }
-
+        for source_table in SourceTable.objects.filter(match_table_filter)
+    }
     masters = {}
     for match in matches:
         if (match.schema, match.table) not in table_to_master_map:
@@ -116,12 +116,12 @@ def _enrich_and_suppress_matches(request, matches: Iterable[_TableMatchResult]):
 
 
 def get_index_aliases_for_all_published_source_tables():
-    return list(
+    return [
         o["index_alias"]
         for o in SourceTable.objects.filter(
             dataset__published=True, dataset__deleted=False
         ).values(index_alias=Concat("schema", Value("--"), "table"))
-    )
+    ]
 
 
 def log_query(user, query):

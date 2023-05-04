@@ -32,15 +32,14 @@ class DeletableModel(models.Model):
     class Meta:
         abstract = True
 
-    def delete(self, **kwargs):  # pylint: disable=arguments-differ
+    def delete(self, **kwargs):    # pylint: disable=arguments-differ
         """
         Override delete method to allow for "soft" deleting.
         If `force` is True delete from the database, otherwise set model.deleted = True
         :param kwargs: dict - add force=True to delete from the database
         :return:
         """
-        force = kwargs.pop("force", False)
-        if force:
+        if force := kwargs.pop("force", False):
             super().delete(**kwargs)
         else:
             pre_delete.send(self.__class__, instance=self)

@@ -66,8 +66,7 @@ class CreateTableForm(GOVUKDesignSystemForm):
         return path
 
     def clean(self):
-        table_name = self.cleaned_data.get("table_name")
-        if table_name:
+        if table_name := self.cleaned_data.get("table_name"):
             if (
                 table_exists(
                     settings.EXPLORER_DEFAULT_CONNECTION,

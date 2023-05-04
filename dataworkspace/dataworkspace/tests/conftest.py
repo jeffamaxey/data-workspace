@@ -53,15 +53,13 @@ def staff_client(staff_user_data):
 
 @pytest.fixture
 def user(db):
-    user = get_user_model().objects.create(
+    return get_user_model().objects.create(
         username="frank.exampleson@test.com",
         is_staff=False,
         is_superuser=False,
         email="frank.exampleson@test.com",
         first_name="Frank",
     )
-
-    return user
 
 
 @pytest.fixture

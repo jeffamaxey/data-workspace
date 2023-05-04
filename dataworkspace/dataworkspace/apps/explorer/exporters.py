@@ -29,8 +29,7 @@ class BaseExporter:
         self.user = request.user
 
     def get_output(self, **kwargs):
-        value = self.get_file_output(**kwargs).getvalue()
-        return value
+        return self.get_file_output(**kwargs).getvalue()
 
     def get_file_output(self, **kwargs):
         headers, data, _ = fetch_query_results(self.querylog.id)
@@ -47,10 +46,10 @@ class BaseExporter:
 
     def get_filename(self):
         # build list of valid chars, build filename from title and replace spaces
-        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        valid_chars = f"-_.() {string.ascii_letters}{string.digits}"
         filename = "".join(c for c in self.querylog.title if c in valid_chars)
         filename = filename.replace(" ", "_")
-        return "{}{}".format(filename, self.file_extension)
+        return f"{filename}{self.file_extension}"
 
 
 class CSVExporter(BaseExporter):
@@ -78,12 +77,10 @@ class JSONExporter(BaseExporter):
     file_extension = ".json"
 
     def _get_output(self, headers, data, **kwargs):
-        rows = []
-        for row in data:
-            rows.append(  # pylint: disable=unnecessary-comprehension
-                dict(zip([str(h) if h is not None else "" for h in headers], row))
-            )
-
+        rows = [
+            dict(zip([str(h) if h is not None else "" for h in headers], row))
+            for row in data
+        ]
         json_data = json.dumps(rows, cls=DjangoJSONEncoder)
         return StringIO(json_data)
 
@@ -105,16 +102,11 @@ class ExcelExporter(BaseExporter):
 
         # Write headers
         row = 0
-        col = 0
         header_style = wb.add_format({"bold": True})
-        for header in headers:
+        for col, header in enumerate(headers):
             ws.write(row, col, str(header), header_style)
-            col += 1
-
-        # Write data
-        row = 1
         col = 0
-        for data_rows in data:
+        for row, data_rows in enumerate(data, start=1):
             for data_row in data_rows:
                 # xlsxwriter can't handle timezone-aware datetimes or
                 # UUIDs, so we help out here and just cast it to a
@@ -126,7 +118,6 @@ class ExcelExporter(BaseExporter):
                     data_row = json.dumps(data_row)
                 ws.write(row, col, data_row)
                 col += 1
-            row += 1
             col = 0
 
         wb.close()

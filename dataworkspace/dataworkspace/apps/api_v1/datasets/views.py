@@ -51,8 +51,7 @@ def _get_dataset_rows(connection, sql, query_args=None, cursor_itersize=1000):
 
         while True:
             rows = cursor.fetchmany(cursor_itersize)
-            for row in rows:
-                yield row
+            yield from rows
             if not rows:
                 break
 

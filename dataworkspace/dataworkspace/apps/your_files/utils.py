@@ -56,20 +56,18 @@ def get_s3_csv_column_types(path):
     schema = Schema()
     schema.infer(rows, confidence=1, headers=1)
 
-    fields = []
-    for idx, field in enumerate(schema.descriptor["fields"]):
-        fields.append(
-            {
-                "header_name": field["name"],
-                "column_name": clean_db_identifier(field["name"]),
-                "data_type": SCHEMA_POSTGRES_DATA_TYPE_MAP.get(
-                    TABLESCHEMA_FIELD_TYPE_MAP.get(field["type"], field["type"]),
-                    PostgresDataTypes.TEXT,
-                ),
-                "sample_data": [row[idx] for row in rows][:6],
-            }
-        )
-    return fields
+    return [
+        {
+            "header_name": field["name"],
+            "column_name": clean_db_identifier(field["name"]),
+            "data_type": SCHEMA_POSTGRES_DATA_TYPE_MAP.get(
+                TABLESCHEMA_FIELD_TYPE_MAP.get(field["type"], field["type"]),
+                PostgresDataTypes.TEXT,
+            ),
+            "sample_data": [row[idx] for row in rows][:6],
+        }
+        for idx, field in enumerate(schema.descriptor["fields"])
+    ]
 
 
 def trigger_dataflow_dag(path, schema, table, column_definitions, dag_run_id):

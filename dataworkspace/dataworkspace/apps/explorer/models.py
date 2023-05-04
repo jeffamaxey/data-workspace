@@ -41,7 +41,7 @@ def shared_dict_update(target, source):
 
 def get_params_for_url(query):  # pylint: disable=inconsistent-return-statements
     if query.params:
-        return "|".join(["%s:%s" % (p, v) for p, v in query.params.items()])
+        return "|".join([f"{p}:{v}" for p, v in query.params.items()])
 
 
 class PlaygroundSQL(models.Model):

@@ -49,7 +49,7 @@ class EventLogAdmin(admin.ModelAdmin):
         except NoReverseMatch:
             return obj.related_object
 
-        return format_html('<a href="{}">{}</a>'.format(url, obj.related_object))
+        return format_html(f'<a href="{url}">{obj.related_object}</a>')
 
     related_object_link.short_description = "Related Object"
 
@@ -75,9 +75,9 @@ class EventLogAdmin(admin.ModelAdmin):
     def export_events(self, request, queryset):
         field_names = ["timestamp", "user", "event_type", "related_object", "extra"]
         response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = "attachment; filename=event-log-{}.csv".format(
-            datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        )
+        response[
+            "Content-Disposition"
+        ] = f'attachment; filename=event-log-{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.csv'
         writer = csv.DictWriter(response, field_names, quoting=csv.QUOTE_NONNUMERIC)
         writer.writeheader()
         for eventlog in queryset:

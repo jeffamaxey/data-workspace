@@ -43,8 +43,7 @@ class DatasetAccessRequestForm(GOVUKDesignSystemModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        initial_email = self.initial.get("contact_email")
-        if initial_email:
+        if initial_email := self.initial.get("contact_email"):
             self.fields["contact_email"].help_text = f"You are logged in as {initial_email}"
             self.fields["contact_email"].widget.custom_context[
                 "help_text"

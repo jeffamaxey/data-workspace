@@ -19,9 +19,7 @@ def get_username(user):
 
 
 def get_people_url(name):
-    return "https://people.trade.gov.uk/search?search_filters[]=people&query={}".format(
-        urllib.parse.quote(name)
-    )
+    return f"https://people.trade.gov.uk/search?search_filters[]=people&query={urllib.parse.quote(name)}"
 
 
 def build_ticket_description_text(access_request, access_request_url, catalogue_item=None):
@@ -50,12 +48,10 @@ def build_private_comment_text(catalogue_item, approval_url):
     asset_owner_text = "None"
     asset_manager_text = "None"
 
-    iao = catalogue_item.information_asset_owner
-    iam = catalogue_item.information_asset_manager
-    if iao:
+    if iao := catalogue_item.information_asset_owner:
         asset_owner_text = f"{iao.first_name} {iao.last_name} " f"<{iao.email}>"
 
-    if iam:
+    if iam := catalogue_item.information_asset_manager:
         asset_owner_text = f"{iam.first_name} {iam.last_name} " f"<{iam.email}>"
 
     private_comment = f"""

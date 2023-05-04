@@ -215,9 +215,10 @@ class VisualisationApprovalForm(GOVUKDesignSystemModelForm):
             self.fields["approved"].required = False
 
     def clean_approved(self):
-        if not self._initial_approved and not self.cleaned_data["approved"]:
+        if self._initial_approved or self.cleaned_data["approved"]:
+            return self.cleaned_data["approved"]
+        else:
             raise ValidationError("You must confirm that you have reviewed this visualisation")
-        return self.cleaned_data["approved"]
 
     def clean(self):
         cleaned_data = super().clean()

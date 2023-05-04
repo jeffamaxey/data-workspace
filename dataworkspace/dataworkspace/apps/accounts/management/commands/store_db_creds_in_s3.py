@@ -20,7 +20,7 @@ class Command(BaseCommand):
         self.stdout.write("store_db_creds_in_s3 started")
 
         bucket = settings.NOTEBOOKS_BUCKET
-        self.stdout.write("Will store credentials in bucket {}".format(bucket))
+        self.stdout.write(f"Will store credentials in bucket {bucket}")
 
         all_users = get_user_model().objects.order_by("last_name", "first_name", "id")
         for user in all_users:

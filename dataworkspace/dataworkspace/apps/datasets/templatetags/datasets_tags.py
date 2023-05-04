@@ -92,10 +92,7 @@ def gmt_date(utc_date: Optional[datetime]) -> Optional[str]:
 
 @register.filter
 def format_date_uk(date: Optional[datetime.date]) -> Optional[str]:
-    if not date:
-        return None
-
-    return date.strftime("%-d %B %Y")
+    return date.strftime("%-d %B %Y") if date else None
 
 
 @register.filter

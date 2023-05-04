@@ -53,7 +53,7 @@ def postgres_user(stem, suffix=""):
         )
 
     user_alphabet = string.ascii_lowercase + string.digits
-    unique_enough = "".join(secrets.choice(user_alphabet) for i in range(5))
+    unique_enough = "".join(secrets.choice(user_alphabet) for _ in range(5))
     suffix = f"_{suffix}" if suffix else ""
 
     # Postgres identifiers can be up to 63 characters.
@@ -76,7 +76,7 @@ def db_role_schema_suffix_for_user(user):
 
 
 def db_role_schema_suffix_for_app(application_template):
-    return "app_" + application_template.host_basename
+    return f"app_{application_template.host_basename}"
 
 
 def new_private_database_credentials(
@@ -546,7 +546,7 @@ def can_access_schema_table(user, database, schema, table):
     sourcetable = SourceTable.objects.filter(
         schema=schema, table=table, database__memorable_name=database
     )
-    has_source_table_perms = (
+    return (
         DataSet.objects.live()
         .filter(
             Q(published=True)
@@ -563,8 +563,6 @@ def can_access_schema_table(user, database, schema, table):
         )
         .exists()
     )
-
-    return has_source_table_perms
 
 
 def get_team_schemas_for_user(user):
@@ -816,9 +814,6 @@ def streaming_query_response(
     # this causes the generator to finish and processing to continue
     done = object()
 
-    # if an exception occurs within the greenlet we need to signal this to the generator
-    # so we create an instance of ExceptionRaisedInGreenlet and add to the queue
-    # the generator checks for this and will re-raise the exception to the view
     class ExceptionRaisedInGreenlet:
         def __init__(self):
             self.exception = None
@@ -829,6 +824,7 @@ def streaming_query_response(
     q = gevent.queue.Queue(maxsize=1)
 
     def stream_query_as_csv_to_queue(conn):
+
         class PseudoBuffer:
             def write(self, value):
                 return value
@@ -868,7 +864,7 @@ def streaming_query_response(
                 logger.debug("total bytes %s", total_bytes)
                 q.put(bytes_fetched, block=True, timeout=query_timeout)
 
-            q.put(csv_writer.writerow(["Number of rows: " + str(i)]))
+            q.put(csv_writer.writerow([f"Number of rows: {str(i)}"]))
 
         q.put(done)
         end = timer()
@@ -1027,7 +1023,7 @@ def table_data(user_email, database, schema, table, filename=None):
 
 
 def get_s3_prefix(user_sso_id):
-    return "user/federated/" + stable_identification_suffix(user_sso_id, short=False) + "/"
+    return f"user/federated/{stable_identification_suffix(user_sso_id, short=False)}/"
 
 
 def create_tools_access_iam_role(user_email_address, user_sso_id, access_point_id):
@@ -1107,8 +1103,7 @@ def create_tools_access_iam_role(user_email_address, user_sso_id, access_point_i
 def without_duplicates_preserve_order(seq):
     # https://stackoverflow.com/a/480227/1319998
     seen = set()
-    seen_add = seen.add
-    return [x for x in seq if not (x in seen or seen_add(x))]
+    return [x for x in seq if x not in seen and not seen.add(x)]
 
 
 class StreamingHttpResponseWithoutDjangoDbConnection(StreamingHttpResponse):
@@ -1124,9 +1119,7 @@ class StreamingHttpResponseWithoutDjangoDbConnection(StreamingHttpResponse):
 
 def stable_identification_suffix(identifier, short):
     digest = hashlib.sha256(identifier.encode("utf-8")).hexdigest()
-    if short:
-        return digest[:8]
-    return digest
+    return digest[:8] if short else digest
 
 
 def close_all_connections_if_not_in_atomic_block(f):

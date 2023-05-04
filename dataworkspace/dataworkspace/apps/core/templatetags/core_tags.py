@@ -28,9 +28,9 @@ def zero_width_space_after(string, sub):
 @register.filter
 def add_class(field, class_attr):
     if "class" in field.field.widget.attrs:
-        field.field.widget.attrs["class"] = "{} {}".format(
-            field.field.widget.attrs["class"], class_attr
-        )
+        field.field.widget.attrs[
+            "class"
+        ] = f'{field.field.widget.attrs["class"]} {class_attr}'
     else:
         field.field.widget.attrs["class"] = class_attr
     return field
@@ -38,7 +38,7 @@ def add_class(field, class_attr):
 
 @register.filter
 def add_field_error(field):
-    return add_class(field, "{}--error".format(field.field.widget.attrs.get("class")))
+    return add_class(field, f'{field.field.widget.attrs.get("class")}--error')
 
 
 @register.filter
@@ -55,12 +55,12 @@ def not_set_if_none(value):
 
 @register.filter
 def spawner_memory(value):
-    return "-" if not value else str(int(value) / 1024).rstrip("0").rstrip(".") + "GB"
+    return str(int(value) / 1024).rstrip("0").rstrip(".") + "GB" if value else "-"
 
 
 @register.filter
 def spawner_cpu(value):
-    return "-" if not value else str(int(value) / 1024).rstrip("0").rstrip(".")
+    return str(int(value) / 1024).rstrip("0").rstrip(".") if value else "-"
 
 
 @register.simple_tag(takes_context=True)

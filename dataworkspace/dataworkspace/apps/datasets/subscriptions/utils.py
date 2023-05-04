@@ -33,7 +33,6 @@ def unsubscribe(subscription_id: str, user):
 
 def subscribe(user, dataset):
     try:
-        subscription = dataset.subscriptions.get(user=user)
-        return subscription
+        return dataset.subscriptions.get(user=user)
     except DataSetSubscription.DoesNotExist:
         return dataset.subscriptions.create(user=user)

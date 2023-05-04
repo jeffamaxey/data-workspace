@@ -608,10 +608,10 @@ def get_detailed_changelog(related_object):
 
 def get_change_item(related_object, change_id):
     changelog = get_detailed_changelog(related_object)
-    for change in changelog:
-        if change["change_id"] == change_id:
-            return change
-    return None
+    return next(
+        (change for change in changelog if change["change_id"] == change_id),
+        None,
+    )
 
 
 @celery_app.task()
@@ -817,19 +817,15 @@ def store_reference_dataset_metadata():
             reference_dataset.fields.latest("modified_date").modified_date, latest_update_date
         )
 
-        # Get the latest date the data in this dataset was updated
-        data_updated = reference_dataset.data_last_updated
-        if data_updated:
+        if data_updated := reference_dataset.data_last_updated:
             latest_update_date = max(latest_update_date, data_updated)
 
-        # Get the latest data updated dates for any linked reference datasets
-        linked_datasets_updated_dates = [
+        if linked_datasets_updated_dates := [
             field.linked_reference_dataset_field.reference_dataset.data_last_updated
             for field in reference_dataset.fields.filter(
                 data_type=ReferenceDatasetField.DATA_TYPE_FOREIGN_KEY
             )
-        ]
-        if linked_datasets_updated_dates:
+        ]:
             latest_update_date = max(latest_update_date, max(linked_datasets_updated_dates))
 
         logger.info(

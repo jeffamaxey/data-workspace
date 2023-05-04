@@ -30,8 +30,7 @@ class CommandRunner(threading.Thread):
 class MultiTask:
     def __init__(self, tasks):
         self.threads = []
-        for task, args in tasks:
-            self.threads.append(CommandRunner(task, args))
+        self.threads.extend(CommandRunner(task, args) for task, args in tasks)
 
     def start(self):
         for t in self.threads:

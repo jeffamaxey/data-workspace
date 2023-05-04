@@ -62,9 +62,9 @@ class DataWorkspaceRemoteUserView(AuthView):
         if g.user is not None and g.user.is_authenticated:
             return redirect(redirect_url)
 
-        app = self.appbuilder.get_app
-
         if role_name == "Admin":
+            app = self.appbuilder.get_app
+
             is_admin = request.headers["Sso-Profile-Email"] in app.config["ADMIN_USERS"]
             if not is_admin:
                 return make_response({}, 401)
@@ -218,7 +218,6 @@ def app_mutator(app):
         base_api,
     )
 
-    # Monkey patch the related owners filter to remove any non-editor users
     class FilterRelatedOwners(filters.FilterRelatedOwners):
         def apply(self, query, value):
             user_model = security_manager.user_model
@@ -227,10 +226,6 @@ def app_mutator(app):
 
     filters.FilterRelatedOwners = FilterRelatedOwners
 
-    # Override related user view filters to force the filters to be added even if
-    # there is no filter value. This is necessary to allow us to filter
-    # out non-editor users on every request, even if there is no value to filter
-    # for (i.e. filter = '')
     class BaseSupersetModelRestApi(base_api.BaseSupersetModelRestApi):
         def _get_related_filter(self, datamodel, column_name, value):
             filter_field = self.related_field_filters.get(column_name)
@@ -267,11 +262,12 @@ def app_mutator(app):
 
     base_api.BaseSupersetModelRestApi = BaseSupersetModelRestApi
 
+
+
     class CustomJSONEncoder(json.JSONEncoder):
         def default(self, o):  # pylint: disable=arguments-differ
-            if isinstance(o, decimal.Decimal):
-                return str(o)
-            return super().default(o)
+            return str(o) if isinstance(o, decimal.Decimal) else super().default(o)
+
 
     with app.app_context():
         app.json_encoder = CustomJSONEncoder

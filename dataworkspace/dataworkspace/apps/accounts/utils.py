@@ -82,7 +82,7 @@ def _process_user_access_profile(user, access_profile_name, func):
     sso_admin_scope_token = settings.SSO_ADMIN_SCOPE_TOKEN
 
     response = func(
-        sso_base_url + f"api/v1/user/permission/{user.profile.sso_id}/",
+        f"{sso_base_url}api/v1/user/permission/{user.profile.sso_id}/",
         data={"access-profile-slug": access_profile_name},
         headers={"Authorization": f"Bearer {sso_admin_scope_token}"},
     )

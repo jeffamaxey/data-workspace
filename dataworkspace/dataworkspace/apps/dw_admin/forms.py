@@ -117,14 +117,13 @@ class ReferenceDataInlineFormset(CustomInlineFormSet):
                 relationships[relationship_name] = form.cleaned_data[
                     "linked_reference_dataset_field"
                 ].reference_dataset
-            else:
-                if (
+            elif (
                     relationships[relationship_name]
                     != form.cleaned_data["linked_reference_dataset_field"].reference_dataset
                 ):
-                    raise forms.ValidationError(
-                        "Fields with the same relationship name must point to the same underlying reference dataset"
-                    )
+                raise forms.ValidationError(
+                    "Fields with the same relationship name must point to the same underlying reference dataset"
+                )
 
 
 class ReferenceDataFieldInlineForm(forms.ModelForm):
@@ -253,18 +252,16 @@ class ReferenceDataFieldInlineForm(forms.ModelForm):
             ].reference_dataset.external_database
             if ext_db is not None and ext_db != linked_ext_db:
                 raise forms.ValidationError(
-                    "Linked reference dataset does not exist on external database {}".format(
-                        ext_db.memorable_name
-                    )
+                    f"Linked reference dataset does not exist on external database {ext_db.memorable_name}"
                 )
 
         return cleaned["linked_reference_dataset_field"]
 
     def clean_data_type(self):
-        orig_data_type = self.instance.data_type
         new_data_type = self.cleaned_data["data_type"]
 
         if self.instance.id is not None:
+            orig_data_type = self.instance.data_type
             # Do not allow changing from foreign key to another data type
             if (
                 new_data_type != ReferenceDatasetField.DATA_TYPE_FOREIGN_KEY
@@ -309,10 +306,7 @@ class ReferenceDataFieldInlineForm(forms.ModelForm):
         column_name = cleaned["column_name"]
         if column_name in self._reserved_column_names:
             raise forms.ValidationError(
-                '"{}" is a reserved column name (along with: "{}")'.format(
-                    column_name,
-                    '", "'.join([x for x in self._reserved_column_names if x != column_name]),
-                )
+                f""""{column_name}" is a reserved column name (along with: "{'", "'.join([x for x in self._reserved_column_names if x != column_name])}")"""
             )
 
         # Saving a dataset with no fields results in data_type not being
@@ -390,7 +384,7 @@ class ReferenceDataRowDeleteForm(forms.Form):
         conflicts = []
         for field in linking_fields:
             conflicts += field.reference_dataset.get_records().filter(
-                **{"{}__id".format(field.relationship_name): self.cleaned_data.get("id")}
+                **{f"{field.relationship_name}__id": self.cleaned_data.get("id")}
             )
 
         if conflicts:
@@ -413,7 +407,7 @@ class ReferenceDataRowDeleteAllForm(forms.Form):
         for field in linking_fields:
             for record in self.reference_dataset.get_records():
                 conflicts += field.reference_dataset.get_records().filter(
-                    **{"{}__id".format(field.relationship_name): record.id}
+                    **{f"{field.relationship_name}__id": record.id}
                 )
 
         if conflicts:
@@ -461,12 +455,11 @@ def clean_identifier(form):
     id_field = reference_dataset.identifier_field.column_name
     cleaned_data = form.cleaned_data
     if id_field in cleaned_data:
-        exists = (
+        if exists := (
             reference_dataset.get_records()
             .filter(**{id_field: cleaned_data[id_field]})
             .exclude(id=field.id)
-        )
-        if exists:
+        ):
             raise forms.ValidationError("A record with this identifier already exists")
     return cleaned_data[id_field]
 
@@ -559,13 +552,16 @@ class CustomDatasetQueryInlineForm(forms.ModelForm):
                 {"reviewed": "You must review this SQL query before the dataset can be published."}
             )
 
-        if self.instance.reviewed is True and self.cleaned_data["dataset"].published is False:
-            if set(self.changed_data) - {"reviewed"}:
-                self.cleaned_data["reviewed"] = False
+        if (
+            self.instance.reviewed is True
+            and self.cleaned_data["dataset"].published is False
+            and set(self.changed_data) - {"reviewed"}
+        ):
+            self.cleaned_data["reviewed"] = False
 
-                # We need to also update the instance directly, as well, because the `reviewed` field will not otherwise
-                # be updated for users who have `reviewed` as a read-only field (i.e. "Subject Matter Experts").
-                self.instance.reviewed = False
+            # We need to also update the instance directly, as well, because the `reviewed` field will not otherwise
+            # be updated for users who have `reviewed` as a read-only field (i.e. "Subject Matter Experts").
+            self.instance.reviewed = False
 
         return self.cleaned_data
 

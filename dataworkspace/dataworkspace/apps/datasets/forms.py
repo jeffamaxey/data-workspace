@@ -108,8 +108,7 @@ class RequestAccessForm(GOVUKDesignSystemForm):
     def __init__(self, *args, visualisation=False, **kwargs):
         super().__init__(*args, **kwargs)
 
-        initial_email = self.initial.get("email")
-        if initial_email:
+        if initial_email := self.initial.get("email"):
             self.fields["email"].help_text = f"You are logged in as {initial_email}"
             self.fields["email"].widget.custom_context[
                 "help_text"
@@ -245,8 +244,8 @@ class DatasetSearchForm(forms.Form):
 
         selected_uses = set(self.cleaned_data["use"])
         selected_data_type = set(self.cleaned_data["data_type"])
-        selected_source_ids = set(source.id for source in self.cleaned_data["source"])
-        selected_topic_ids = set(topic.id for topic in self.cleaned_data["topic"])
+        selected_source_ids = {source.id for source in self.cleaned_data["source"]}
+        selected_topic_ids = {topic.id for topic in self.cleaned_data["topic"]}
 
         # Cache these locally for performance. The source model choice field can end up hitting the DB each time.
         user_access_choices = list(self.fields["user_access"].choices)
@@ -302,29 +301,30 @@ class DatasetSearchForm(forms.Form):
                     counts["topic"][topic_id.value] += 1
 
         self.fields["user_access"].choices = [
-            (access_id, access_text + f" ({counts['user_access'][access_id]})")
+            (access_id, f"{access_text} ({counts['user_access'][access_id]})")
             for access_id, access_text in user_access_choices
         ]
 
         self.fields["bookmarked"].choices = [
             (
                 bookmarked_id,
-                bookmarked_text + f" ({counts['bookmarked'][bookmarked_id]})",
+                f"{bookmarked_text} ({counts['bookmarked'][bookmarked_id]})",
             )
             for bookmarked_id, bookmarked_text in self.fields["bookmarked"].choices
         ]
 
         self.fields["admin_filters"].choices = [
-            (admin_id, admin_text + f" ({counts['admin_filters'][admin_id]})")
+            (admin_id, f"{admin_text} ({counts['admin_filters'][admin_id]})")
             for admin_id, admin_text in admin_choices
         ]
 
         self.fields["use"].choices = [
-            (use_id, use_text + f" ({counts['use'][use_id]})") for use_id, use_text in use_choices
+            (use_id, f"{use_text} ({counts['use'][use_id]})")
+            for use_id, use_text in use_choices
         ]
 
         self.fields["data_type"].choices = [
-            (type_id, type_text + f" ({counts['data_type'][type_id]})")
+            (type_id, f"{type_text} ({counts['data_type'][type_id]})")
             for type_id, type_text in data_type_choices
         ]
 
@@ -338,9 +338,10 @@ class DatasetSearchForm(forms.Form):
         ]
 
         self.fields["topic"].choices = [
-            (topic_id, topic_text + f" ({counts['topic'][topic_id.value]})")
+            (topic_id, f"{topic_text} ({counts['topic'][topic_id.value]})")
             for topic_id, topic_text in topic_choices
-            if topic_id.value in selected_topic_ids or counts["topic"][topic_id.value] != 0
+            if topic_id.value in selected_topic_ids
+            or counts["topic"][topic_id.value] != 0
         ]
 
 

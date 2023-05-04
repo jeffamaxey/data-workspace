@@ -248,7 +248,10 @@ def tools_html_POST(request):
         messages.success(request, "Stopped")
     else:
         stop_spawner_and_application(application_instance)
-        messages.success(request, "Stopped " + application_instance.application_template.nice_name)
+        messages.success(
+            request,
+            f"Stopped {application_instance.application_template.nice_name}",
+        )
     return redirect(redirect_target)
 
 
@@ -343,7 +346,7 @@ def visualisations_html_view(request):
     if not request.user.has_perm("applications.develop_visualisations"):
         raise PermissionDenied()
 
-    if not request.method == "GET":
+    if request.method != "GET":
         return HttpResponse(status=405)
 
     return visualisations_html_GET(request)
@@ -811,10 +814,7 @@ def _application_template(gitlab_project):
     # something unexpected is happening that should be addressed
     max_attempts = 20
     for i in range(0, max_attempts):
-        if i == 0:
-            suffix = ""
-        else:
-            suffix = "-" + str(i)
+        suffix = "" if i == 0 else f"-{str(i)}"
         path_and_dns_safe_name = path_and_dns_safe_root + suffix
 
         try:
@@ -1209,14 +1209,16 @@ def _datasets(user, application_template):
     source_tables_user = source_tables_for_user(user)
     source_tables_app = source_tables_for_app(application_template)
 
-    selectable_dataset_ids = set(
+    selectable_dataset_ids = {
         source_table["dataset"]["id"]
         for source_table in source_tables_user
         if source_table["dataset"]["user_access_type"]
         in (UserAccessType.REQUIRES_AUTHORIZATION, UserAccessType.OPEN)
-    )
+    }
 
-    selected_dataset_ids = set(source_table["dataset"]["id"] for source_table in source_tables_app)
+    selected_dataset_ids = {
+        source_table["dataset"]["id"] for source_table in source_tables_app
+    }
 
     source_tables_without_select_info = _without_duplicates_preserve_order(
         source_tables_user + source_tables_app,

@@ -236,7 +236,7 @@ def aws_credentials_api_GET(request):
         try:
             credentials = client.assume_role(
                 RoleArn=role_arn,
-                RoleSessionName="s3_access_" + str(request.user.profile.sso_id),
+                RoleSessionName=f"s3_access_{str(request.user.profile.sso_id)}",
                 DurationSeconds=60 * 60,
             )["Credentials"]
         except Exception:  # pylint: disable=broad-except
