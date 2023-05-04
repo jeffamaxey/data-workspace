@@ -6,10 +6,10 @@ from django.db import migrations, connection, ProgrammingError
 def generate_table_name(apps, _):
     model = apps.get_model("datasets", "ReferenceDataset")
     for r in model.objects.all():
-        original_table_name = "refdata__{}".format(r.id)
+        original_table_name = f"refdata__{r.id}"
         if r.table_name is None or r.table_name == original_table_name:
-            r.table_name = "ref_{}".format(r.slug.replace("-", "_"))
-            print('Changing table "{}" to "{}"'.format(original_table_name, r.table_name))
+            r.table_name = f'ref_{r.slug.replace("-", "_")}'
+            print(f'Changing table "{original_table_name}" to "{r.table_name}"')
             r.schema_version += 1
             r.save()
 

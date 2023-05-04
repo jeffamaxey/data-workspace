@@ -30,9 +30,9 @@ def flush_database(connection):
         cursor.execute(sql)
         sql = "CREATE SCHEMA public;"
         cursor.execute(sql)
-        sql = "GRANT ALL ON SCHEMA public TO {};".format(current_user)
+        sql = f"GRANT ALL ON SCHEMA public TO {current_user};"
         cursor.execute(sql)
-        sql = "GRANT ALL ON SCHEMA public TO {};".format(current_user)
+        sql = f"GRANT ALL ON SCHEMA public TO {current_user};"
         cursor.execute(sql)
 
 
@@ -82,7 +82,7 @@ class TestAPIDatasetView(TestCase):
             ]
             cur.executemany(sql, values)
 
-        url = "/api/v1/dataset/{}/{}".format(dataset.id, source_table.id)
+        url = f"/api/v1/dataset/{dataset.id}/{source_table.id}"
         response = self.client.get(url)
         expected = {
             "headers": ["id", "name", "timestamp"],
@@ -121,7 +121,7 @@ class TestAPIDatasetView(TestCase):
             )
             cur.execute(sql)
 
-        url = "/api/v1/dataset/{}/{}".format(dataset.id, source_table.id)
+        url = f"/api/v1/dataset/{dataset.id}/{source_table.id}"
         response = self.client.get(url)
         expected = {"headers": ["id", "name", "timestamp"], "next": None, "values": []}
 
@@ -160,7 +160,7 @@ class TestAPIDatasetView(TestCase):
             )
             cur.execute(sql)
 
-        url = "/api/v1/dataset/{}/{}".format(dataset.id, view_source_table.id)
+        url = f"/api/v1/dataset/{dataset.id}/{view_source_table.id}"
         with pytest.raises(ValueError) as e:
             self.client.get(url)
 
@@ -193,7 +193,7 @@ class TestAPIDatasetView(TestCase):
             )
             cur.execute(sql)
 
-        url = "/api/v1/dataset/{}/{}".format(dataset.id, source_table.id)
+        url = f"/api/v1/dataset/{dataset.id}/{source_table.id}"
         with pytest.raises(ValueError) as e:
             self.client.get(url)
 
@@ -215,7 +215,7 @@ class TestAPIDatasetView(TestCase):
             dataset=dataset, database=database, table=table
         )[0]
 
-        url = "/api/v1/dataset/{}/{}".format(dataset.id, source_table.id)
+        url = f"/api/v1/dataset/{dataset.id}/{source_table.id}"
         with pytest.raises(ValueError) as e:
             self.client.get(url)
 
@@ -248,7 +248,7 @@ class TestAPIDatasetView(TestCase):
             values = [(0, "abigail"), (1, "romeo")]
             cur.executemany(sql, values)
 
-        url = "/api/v1/dataset/{}/{}?$searchAfter=0".format(dataset.id, source_table.id)
+        url = f"/api/v1/dataset/{dataset.id}/{source_table.id}?$searchAfter=0"
         response = self.client.get(url)
         expected = {"headers": ["id", "name"], "values": [[1, "romeo"]], "next": None}
 

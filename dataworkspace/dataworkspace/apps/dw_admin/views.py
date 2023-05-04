@@ -57,9 +57,9 @@ class ReferenceDatasetAdminEditView(ReferenceDataRecordMixin, FormView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
-        ctx["title"] = "{} reference dataset record".format(
-            "Add" if self.kwargs.get("record_id") is None else "Edit"
-        )
+        ctx[
+            "title"
+        ] = f'{"Add" if self.kwargs.get("record_id") is None else "Edit"} reference dataset record'
         return ctx
 
     def get_queryset(self):
@@ -113,12 +113,12 @@ class ReferenceDatasetAdminEditView(ReferenceDataRecordMixin, FormView):
         # Add validation for the custom identifier field
         setattr(
             DynamicReferenceDatasetRecordForm,
-            "clean_{}".format(reference_dataset.identifier_field.column_name),
+            f"clean_{reference_dataset.identifier_field.column_name}",
             clean_identifier,
         )
         return helpers.AdminForm(
             DynamicReferenceDatasetRecordForm(**self.get_form_kwargs()),
-            list([(None, {"fields": field_names})]),
+            [(None, {"fields": field_names})],
             {},
         )
 
@@ -140,9 +140,7 @@ class ReferenceDatasetAdminEditView(ReferenceDataRecordMixin, FormView):
     def get_success_url(self):
         messages.success(
             self.request,
-            "Reference dataset record {} successfully".format(
-                "updated" if "record_id" in self.kwargs else "added"
-            ),
+            f'Reference dataset record {"updated" if "record_id" in self.kwargs else "added"} successfully',
         )
         instance = self._get_reference_dataset()
         return reverse("admin:datasets_referencedataset_change", args=(instance.id,))
@@ -283,8 +281,8 @@ class ReferenceDatasetAdminUploadView(ReferenceDataRecordMixin, FormView):
                         except linked_dataset.get_record_model_class().DoesNotExist:
                             errors[
                                 header_name
-                            ] = "Identifier {} does not exist in linked dataset".format(value)
-                    form_data[field.relationship_name + "_id"] = link_id
+                            ] = f"Identifier {value} does not exist in linked dataset"
+                    form_data[f"{field.relationship_name}_id"] = link_id
                 else:
                     # Otherwise validate using the associated form field
                     try:
@@ -354,7 +352,9 @@ class SourceLinkUploadView(UserPassesTestMixin, CreateView):  # pylint: disable=
 
     def get_form(self, form_class=None):
         form = self.get_form_class()(**self.get_form_kwargs())
-        return helpers.AdminForm(form, list([(None, {"fields": list(form.fields.keys())})]), {})
+        return helpers.AdminForm(
+            form, [(None, {"fields": list(form.fields.keys())})], {}
+        )
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -377,7 +377,7 @@ class SourceLinkUploadView(UserPassesTestMixin, CreateView):  # pylint: disable=
             )
         except ClientError as ex:
             return HttpResponseServerError(
-                "Error saving file: {}".format(ex.response["Error"]["Message"])
+                f'Error saving file: {ex.response["Error"]["Message"]}'
             )
         source_link.save()
         return HttpResponseRedirect(self.get_success_url())

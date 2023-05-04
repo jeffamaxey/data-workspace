@@ -198,7 +198,7 @@ def test_find_datasets_with_no_results(client):
     response = client.get(reverse("datasets:find_datasets"), {"q": "search"})
 
     assert response.status_code == 200
-    assert list(response.context["datasets"]) == []
+    assert not list(response.context["datasets"])
 
     assert b"There are no results for your search" in response.content
 
@@ -283,10 +283,10 @@ def test_find_datasets_does_not_show_deleted_entries(client, staff_client):
     staff_response = staff_client.get(reverse("datasets:find_datasets"))
 
     assert response.status_code == 200
-    assert list(response.context["datasets"]) == []
+    assert not list(response.context["datasets"])
 
     assert staff_response.status_code == 200
-    assert list(staff_response.context["datasets"]) == []
+    assert not list(staff_response.context["datasets"])
 
 
 def test_find_datasets_filters_by_query(client):
@@ -588,18 +588,18 @@ def test_datasets_and_visualisations_doesnt_return_duplicate_results(access_type
         datasets = get_datasets_data_for_user_matching_query(
             DataSet.objects.live(), query="", use={}, user=u
         )
-        assert len(datasets) == len(set(dataset["id"] for dataset in datasets))
+        assert len(datasets) == len({dataset["id"] for dataset in datasets})
 
         references = get_datasets_data_for_user_matching_query(
             ReferenceDataset.objects.live(), "", {}, user=u
         )
-        assert len(references) == len(set(reference["id"] for reference in references))
+        assert len(references) == len({reference["id"] for reference in references})
 
         visualisations = get_visualisations_data_for_user_matching_query(
             VisualisationCatalogueItem.objects, query="", user=u
         )
         assert len(visualisations) == len(
-            set(visualisation["id"] for visualisation in visualisations)
+            {visualisation["id"] for visualisation in visualisations}
         )
 
 
@@ -1698,12 +1698,9 @@ def test_launch_master_dataset_in_data_explorer(metadata_db):
 
 
 def get_govuk_summary_list_value(doc, key_text):
-    # xpath hint ... the first dd child of the parent of the dt element containing key_text
-    match = doc.xpath(
+    if match := doc.xpath(
         f'//dt[@class="govuk-summary-list__key" and text()="{key_text}"]/../dd/text()'
-    )
-
-    if match:
+    ):
         return match[0]
 
     # Don't want to return an empty string as this could give false positives

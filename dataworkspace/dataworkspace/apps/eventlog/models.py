@@ -72,8 +72,4 @@ class EventLog(models.Model):
         get_latest_by = "timestamp"
 
     def __str__(self):
-        return "{} – {} – {}".format(
-            self.timestamp,
-            self.user.get_full_name(),  # pylint: disable=no-member
-            self.get_event_type_display(),
-        )
+        return f"{self.timestamp} – {self.user.get_full_name()} – {self.get_event_type_display()}"

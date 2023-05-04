@@ -100,9 +100,7 @@ class GOVUKDesignSystemFileInputWidget(GOVUKDesignSystemWidgetMixin, forms.widge
         """
         Return the file object if it has a defined url attribute.
         """
-        if value:
-            return value.name.split("!")[0]
-        return super().format_value(value)
+        return value.name.split("!")[0] if value else super().format_value(value)
 
 
 class GOVUKDesignSystemMultipleChoiceField(GOVUKDesignSystemFieldMixin, forms.MultipleChoiceField):

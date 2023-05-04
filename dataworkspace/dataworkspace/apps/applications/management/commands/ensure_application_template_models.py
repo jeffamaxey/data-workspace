@@ -28,10 +28,12 @@ class Command(BaseCommand):
         self.stdout.write("ensure_application_template_models started")
 
         desired_application_templates = settings.APPLICATION_TEMPLATES
-        self.stdout.write("Ensuring ApplicationTemplate {}".format(settings.APPLICATION_TEMPLATES))
+        self.stdout.write(
+            f"Ensuring ApplicationTemplate {settings.APPLICATION_TEMPLATES}"
+        )
 
         for desired_application_template in desired_application_templates:
-            self.stdout.write("Checking {}".format(desired_application_template["NICE_NAME"]))
+            self.stdout.write(f'Checking {desired_application_template["NICE_NAME"]}')
             try:
                 ApplicationTemplate.objects.create(
                     visible=False,
@@ -54,8 +56,8 @@ class Command(BaseCommand):
                     desired_application_template.get("SPAWNER_OPTIONS", "{}")
                 )
                 template.save()
-                self.stdout.write("Updated {}".format(desired_application_template["NICE_NAME"]))
+                self.stdout.write(f'Updated {desired_application_template["NICE_NAME"]}')
             else:
-                self.stdout.write("Created {}".format(desired_application_template["NICE_NAME"]))
+                self.stdout.write(f'Created {desired_application_template["NICE_NAME"]}')
 
         self.stdout.write(self.style.SUCCESS("ensure_application_template_models finished"))

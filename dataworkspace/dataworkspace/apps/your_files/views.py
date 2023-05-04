@@ -249,7 +249,7 @@ class CreateTableConfirmDataTypesView(FormView):
                 cleaned[field["column_name"]], PostgresDataTypes.TEXT
             )
 
-        import_path = settings.DATAFLOW_IMPORTS_BUCKET_ROOT + "/" + cleaned["path"]
+        import_path = f"{settings.DATAFLOW_IMPORTS_BUCKET_ROOT}/" + cleaned["path"]
         copy_file_to_uploads_bucket(cleaned["path"], import_path)
         filename = cleaned["path"].split("/")[-1]
         try:

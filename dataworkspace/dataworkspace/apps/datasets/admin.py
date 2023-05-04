@@ -133,9 +133,7 @@ class SourceReferenceInlineMixin(ManageUnpublishedDatasetsMixin):
 
     def source_reference(self, instance):
         code = instance.source_reference
-        if code is not None:
-            return code
-        return "-"
+        return code if code is not None else "-"
 
 
 class SourceLinkInline(admin.TabularInline, SourceReferenceInlineMixin):
@@ -180,9 +178,11 @@ class CustomDatasetQueryInline(admin.TabularInline, SourceReferenceInlineMixin):
         if not obj.pk:
             return ""
         tables = obj.tables.all()
-        if not tables:
-            return "No tables found in query.\n\nPlease ensure the SQL is valid and that the tables exist"
-        return "\n".join([f'"{t.schema}"."{t.table}"' for t in obj.tables.all()])
+        return (
+            "\n".join([f'"{t.schema}"."{t.table}"' for t in obj.tables.all()])
+            if tables
+            else "No tables found in query.\n\nPlease ensure the SQL is valid and that the tables exist"
+        )
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = super().get_readonly_fields(request, obj)
@@ -366,18 +366,18 @@ class BaseDatasetAdmin(PermissionedDatasetAdmin):
                 remove_superset_user_cached_credentials(user)
 
         if isinstance(self, MasterDatasetAdmin):
-            if changed_users:
-                # If we're changing permissions for loads of users, let's just do a full quicksight re-sync.
-                # Makes fewer AWS calls and probably completes as quickly if not quicker.
-                if len(changed_users) >= 50:
-                    sync_quicksight_permissions.delay()
-                else:
-                    changed_user_sso_ids = [str(u.profile.sso_id) for u in changed_users]
-                    sync_quicksight_permissions.delay(
-                        user_sso_ids_to_update=tuple(changed_user_sso_ids)
-                    )
-            elif access_type_changed:
+            if (
+                changed_users
+                and len(changed_users) >= 50
+                or not changed_users
+                and access_type_changed
+            ):
                 sync_quicksight_permissions.delay()
+            elif changed_users:
+                changed_user_sso_ids = [str(u.profile.sso_id) for u in changed_users]
+                sync_quicksight_permissions.delay(
+                    user_sso_ids_to_update=tuple(changed_user_sso_ids)
+                )
 
 
 @admin.register(MasterDataset)
@@ -530,9 +530,7 @@ class ReferenceDatasetAdmin(CSPRichTextEditorMixin, PermissionedDatasetAdmin):
     manage_unpublished_permission_codename = "datasets.manage_unpublished_reference_datasets"
 
     def get_published_version(self, obj):
-        if obj.published_version == "0.0":
-            return " - "
-        return obj.published_version
+        return " - " if obj.published_version == "0.0" else obj.published_version
 
     get_published_version.short_description = "Version"
 
@@ -549,10 +547,7 @@ class ReferenceDatasetAdmin(CSPRichTextEditorMixin, PermissionedDatasetAdmin):
         readonly_fields = super().get_readonly_fields(request, obj)
 
         # Do not allow editing of table names via the admin
-        if obj is not None:
-            return readonly_fields + ("table_name",)
-
-        return readonly_fields
+        return readonly_fields if obj is None else readonly_fields + ("table_name",)
 
     def save_formset(self, request, form, formset, change):
         for f in formset.forms:
@@ -582,9 +577,9 @@ class CustomDatasetQueryAdmin(admin.ModelAdmin):
     def export_queries(self, request, queryset):
         field_names = ["dataset_name", "query_name", "query_admin_url", "query"]
         response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = "attachment; filename=dataset-queries-{}.csv".format(
-            datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        )
+        response[
+            "Content-Disposition"
+        ] = f'attachment; filename=dataset-queries-{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.csv'
         writer = csv.DictWriter(response, field_names, quoting=csv.QUOTE_NONNUMERIC)
         writer.writeheader()
         for query in queryset:
@@ -660,7 +655,7 @@ class VisualisationLinkSqlQueryAdmin(admin.ModelAdmin):
             f"&data_set_id={obj.data_set_id}"
             f"&table_id={obj.table_id}"
         )
-        return '<a href="%s">View previous versions</a>' % (url)
+        return f'<a href="{url}">View previous versions</a>'
 
     view_previous_versions.allow_tags = True
 
@@ -797,7 +792,7 @@ class VisualisationLinkInline(admin.TabularInline, ManageUnpublishedDatasetsMixi
             reverse("admin:datasets_visualisationlinksqlquery_changelist")
             + f"?o=-3&visualisation_link_id={obj.id}&is_latest=True"
         )
-        return '<a href="%s">View sql queries</a>' % (url)
+        return f'<a href="{url}">View sql queries</a>'
 
     sql_queries.allow_tags = True
 
@@ -1016,9 +1011,7 @@ class ToolQueryAuditLogAdmin(admin.ModelAdmin):
         return False
 
     def _truncate_query(self, query, length):
-        if len(query) > length:
-            return query[:length] + "..."
-        return query
+        return f"{query[:length]}..." if len(query) > length else query
 
     def get_list_truncated_query(self, obj):
         return self._truncate_query(

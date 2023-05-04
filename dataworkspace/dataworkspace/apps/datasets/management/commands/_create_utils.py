@@ -48,7 +48,7 @@ class TestData:
         model = get_user_model()
 
         email = self.fake.ascii_safe_email()
-        user = model.objects.create(
+        return model.objects.create(
             username=email,
             is_staff=False,
             is_superuser=False,
@@ -57,17 +57,12 @@ class TestData:
             last_name=self.fake.last_name(),
         )
 
-        return user
-
     def get_user(self):
         model = get_user_model()
 
         user = model.objects.all()
 
-        if user.count():
-            return user[0]
-
-        return None
+        return user[0] if user.count() else None
 
 
 def get_random_tag():
@@ -92,7 +87,7 @@ def create_fake_dataset(dataset_type=DataSetType.MASTER):
     name = test_data.get_dataset_name()
     user = test_data.get_new_user()
 
-    catalogue_item = MasterDataset.objects.create(
+    return MasterDataset.objects.create(
         name=name,
         type=dataset_type,
         slug=slugify(name),
@@ -109,8 +104,6 @@ def create_fake_dataset(dataset_type=DataSetType.MASTER):
         user_access_type="REQUIRES_AUTHORIZATION",
         published=True,
     )
-
-    return catalogue_item
 
 
 def create_fake_visualisation_dataset():
@@ -153,10 +146,11 @@ def create_fake_reference_dataset():
     user = test_data.get_new_user()
 
     table_name = (
-        "ref_" + fake.first_name().lower() + datetime.datetime.now().strftime("%Y%m%d%H%M%s")
+        f"ref_{fake.first_name().lower()}"
+        + datetime.datetime.now().strftime("%Y%m%d%H%M%s")
     )
 
-    catalogue_item = ReferenceDataset.objects.create(
+    return ReferenceDataset.objects.create(
         name=name,
         table_name=table_name,
         slug=slugify(name),
@@ -169,5 +163,3 @@ def create_fake_reference_dataset():
         is_draft=test_data.get_is_draft(),
         published=True,
     )
-
-    return catalogue_item

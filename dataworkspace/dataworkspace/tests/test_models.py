@@ -67,9 +67,7 @@ class BaseModelsTests(BaseTestCase):
             )
             columns = [col[0] for col in cursor.description]
             record = cursor.fetchone()
-            if record is not None:
-                return dict(zip(columns, record))
-            return None
+            return dict(zip(columns, record)) if record is not None else None
 
 
 class ReferenceDatasetsMixin:
@@ -861,7 +859,7 @@ class TestExternalModels(BaseModelsTests):
     def _record_exists(table_name, identifier_field, record_id, database="test_external_db"):
         with connections[database].cursor() as cursor:
             cursor.execute(
-                "SELECT COUNT(*) FROM {} WHERE {}=%s".format(table_name, identifier_field),
+                f"SELECT COUNT(*) FROM {table_name} WHERE {identifier_field}=%s",
                 [record_id],
             )
             return cursor.fetchone()[0] == 1
@@ -1359,9 +1357,7 @@ class TestExternalModels(BaseModelsTests):
 
             # Ensure the local db is updated and the external db throws an error
             def mock_getitem(_, alias):
-                if alias == "default":
-                    return connection
-                return mock_ext_conn
+                return connection if alias == "default" else mock_ext_conn
 
             mock_conn.__getitem__ = mock_getitem
             try:

@@ -374,7 +374,7 @@ class AppUserAdmin(UserAdmin):
                 except SSOApiException as e:
                     messages.error(
                         request,
-                        "Unable to give user access to appstream via SSO API: %s" % e,
+                        f"Unable to give user access to appstream via SSO API: {e}",
                     )
 
                 obj.user_permissions.add(access_appstream_permission)
@@ -392,7 +392,7 @@ class AppUserAdmin(UserAdmin):
                 except SSOApiException as e:
                     messages.error(
                         request,
-                        "Unable to revoke user access to appstream via SSO API: %s" % e,
+                        f"Unable to revoke user access to appstream via SSO API: {e}",
                     )
 
                 obj.user_permissions.remove(access_appstream_permission)
@@ -412,7 +412,7 @@ class AppUserAdmin(UserAdmin):
                 except SSOApiException as e:
                     messages.error(
                         request,
-                        "Unable to give user access to quicksight via SSO API: %s" % e,
+                        f"Unable to give user access to quicksight via SSO API: {e}",
                     )
 
                 obj.user_permissions.add(access_quicksight_permission)
@@ -430,7 +430,7 @@ class AppUserAdmin(UserAdmin):
                 except SSOApiException as e:
                     messages.error(
                         request,
-                        "Unable to revoke user access to quicksight via SSO API: %s" % e,
+                        f"Unable to revoke user access to quicksight via SSO API: {e}",
                     )
 
                 obj.user_permissions.remove(access_quicksight_permission)

@@ -116,6 +116,5 @@ def remove_superset_user_cached_credentials(user):
 
 
 def invalidate_superset_user_cached_credentials():
-    credentials_version = cache.get(credentials_version_key, None)
-    if credentials_version:
+    if credentials_version := cache.get(credentials_version_key, None):
         cache.incr(credentials_version_key)

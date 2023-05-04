@@ -44,23 +44,22 @@ def find_datasets(request):
     has_suppressed_tables = False
 
     form = DatasetFindForm(request.GET)
-    if form.is_valid():
-        search_term = form.cleaned_data.get("q")
-        index_aliases = get_index_aliases_for_all_published_source_tables()
-        matches = (
-            es_client.search_for_phrase(search_term, index_aliases=index_aliases)
-            if search_term
-            else None
-        )
-        if matches:
-            visible_matches, has_suppressed_tables = _enrich_and_suppress_matches(request, matches)
-            results = group_tables_by_master_dataset(visible_matches, request.user)
-
-        if search_term:
-            log_query(request.user, search_term)
-    else:
+    if not form.is_valid():
         return HttpResponseRedirect(reverse("finder:find_datasets"))
 
+    search_term = form.cleaned_data.get("q")
+    index_aliases = get_index_aliases_for_all_published_source_tables()
+    matches = (
+        es_client.search_for_phrase(search_term, index_aliases=index_aliases)
+        if search_term
+        else None
+    )
+    if matches:
+        visible_matches, has_suppressed_tables = _enrich_and_suppress_matches(request, matches)
+        results = group_tables_by_master_dataset(visible_matches, request.user)
+
+    if search_term:
+        log_query(request.user, search_term)
     return render(
         request,
         "finder/index.html",
@@ -134,9 +133,11 @@ class BaseResultsView(WaffleFlagMixin, DetailView):
         ]
 
     def dispatch(self, request, *args, **kwargs):
-        if not self._user_can_access():
-            return HttpResponseForbidden()
-        return super().dispatch(request, *args, **kwargs)
+        return (
+            super().dispatch(request, *args, **kwargs)
+            if self._user_can_access()
+            else HttpResponseForbidden()
+        )
 
 
 class ResultsView(BaseResultsView):
@@ -194,6 +195,7 @@ class DataGridResultsView(BaseResultsView):
 
         if request.GET.get("download"):
 
+
             class PseudoBuffer:
                 def write(self, value):
                     return value
@@ -206,7 +208,7 @@ class DataGridResultsView(BaseResultsView):
             )
 
             def data():
-                yield csv_writer.writerow(dict((name, name) for name in field_names))
+                yield csv_writer.writerow({name: name for name in field_names})
                 yield from (csv_writer.writerow(record) for record in records)
 
             filename = request.POST.get("export_file_name")

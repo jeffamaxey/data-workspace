@@ -177,14 +177,15 @@ class ProcessSpawner:
         try:
             return (
                 "RUNNING"
-                if not spawner_application_id_parsed and ten_seconds_ago < created_date
+                if not spawner_application_id_parsed
+                and ten_seconds_ago < created_date
                 else "STOPPED"
                 if not spawner_application_id_parsed
                 else "RUNNING"
                 if not proxy_url and twenty_seconds_ago < created_date
-                else "STOPPED"
-                if not proxy_url
                 else process_status()
+                if proxy_url
+                else "STOPPED"
             )
 
         except Exception:  # pylint: disable=broad-except
@@ -302,7 +303,7 @@ class FargateSpawner:
                     tag,
                 )
                 if "id" not in pipeline:
-                    raise Exception("Unable to start pipeline: {}".format(pipeline))
+                    raise Exception(f"Unable to start pipeline: {pipeline}")
                 pipeline_id = pipeline["id"]
                 application_instance.spawner_application_instance_id = json.dumps(
                     {"pipeline_id": pipeline_id, "task_arn": None}
@@ -317,13 +318,13 @@ class FargateSpawner:
                         pipeline["status"] not in RUNNING_PIPELINE_STATUSES
                         and pipeline["status"] not in SUCCESS_PIPELINE_STATUSES
                     ):
-                        raise Exception("Pipeline failed {}".format(pipeline))
+                        raise Exception(f"Pipeline failed {pipeline}")
                     if pipeline["status"] in SUCCESS_PIPELINE_STATUSES:
                         break
                 else:
                     logger.error("Pipeline took too long, cancelling: %s", pipeline)
                     _gitlab_ecr_pipeline_cancel(pipeline_id)
-                    raise Exception("Pipeline {} took too long".format(pipeline))
+                    raise Exception(f"Pipeline {pipeline} took too long")
 
             # It doesn't really matter what the suffix is: it could even be a random
             # number, but we choose the short hashed version of the SSO ID to help debugging
@@ -389,8 +390,9 @@ class FargateSpawner:
                 raise Exception("Application set to stopped before spawning complete")
 
             for _ in range(0, 60):
-                ip_address = _fargate_task_ip(options["CLUSTER_NAME"], task_arn)
-                if ip_address:
+                if ip_address := _fargate_task_ip(
+                    options["CLUSTER_NAME"], task_arn
+                ):
                     application_instance.proxy_url = f"http://{ip_address}:{port}"
                     application_instance.save(update_fields=["proxy_url"])
                     return
@@ -427,12 +429,8 @@ class FargateSpawner:
             task_arn = spawner_application_id_parsed.get("task_arn")
             pipeline_id = spawner_application_id_parsed.get("pipeline_id")
 
-            # Give sixty seconds for something to start...
-            if not pipeline_id and not task_arn and created_date > sixty_seconds_ago:
-                return "RUNNING"
             if not pipeline_id and not task_arn:
-                return "STOPPED"
-
+                return "RUNNING" if created_date > sixty_seconds_ago else "STOPPED"
             # ... if started pipeline, but not yet the task, give 15 minutes to complete...
             if pipeline_id and not task_arn:
                 pipeline = _gitlab_ecr_pipeline_get(pipeline_id)
@@ -456,17 +454,11 @@ class FargateSpawner:
 
             # ... give sixty seconds to create the task...
             if not task_arn:
-                if task_should_be_created > sixty_seconds_ago:
-                    return "RUNNING"
-                return "STOPPED"
-
+                return "RUNNING" if task_should_be_created > sixty_seconds_ago else "STOPPED"
             # .... give three minutes to get the task itself (to mitigate eventual consistency)...
             task = _fargate_task_describe(cluster_name, task_arn)
-            if task is None and task_should_be_created > three_minutes_ago:
-                return "RUNNING"
             if task is None:
-                return "STOPPED"
-
+                return "RUNNING" if task_should_be_created > three_minutes_ago else "STOPPED"
             # ... and the spawner is running if the task is running or starting...
             if task["lastStatus"] in ("PROVISIONING", "PENDING", "RUNNING"):
                 return "RUNNING"
@@ -573,9 +565,9 @@ def _fargate_new_task_definition(
         for container in describe_task_response["taskDefinition"]["containerDefinitions"]
         if container["name"] == container_name
     ][0]
-    container["image"] += (":" + tag) if tag else ""
+    container["image"] += f":{tag}" if tag else ""
     describe_task_response["taskDefinition"]["family"] = (
-        task_family + ("-" + tag if tag else "") + "-" + task_family_suffix
+        task_family + (f"-{tag}" if tag else "") + "-" + task_family_suffix
     )
 
     if efs_access_point_id:
@@ -628,9 +620,7 @@ def _fargate_task_ip(cluster_name, arn):
         if described_task and "attachments" in described_task and described_task["attachments"]
         else []
     )
-    ip_address = ip_address_attachements[0] if ip_address_attachements else ""
-
-    return ip_address
+    return ip_address_attachements[0] if ip_address_attachements else ""
 
 
 def _fargate_task_describe(cluster_name, arn):
@@ -638,15 +628,13 @@ def _fargate_task_describe(cluster_name, arn):
 
     described_tasks = client.describe_tasks(cluster=cluster_name, tasks=[arn])
 
-    task = (
+    return (
         described_tasks["tasks"][0]
         if "tasks" in described_tasks and described_tasks["tasks"]
         else described_tasks["task"]
         if "task" in described_tasks
         else None
     )
-
-    return task
 
 
 def _fargate_task_stop(cluster_name, task_arn):
@@ -660,7 +648,7 @@ def _fargate_task_stop(cluster_name, task_arn):
             sleep_time = sleep_time * 2
         else:
             return
-    raise Exception("Unable to stop Fargate task {}".format(task_arn))
+    raise Exception(f"Unable to stop Fargate task {task_arn}")
 
 
 def _fargate_task_run(

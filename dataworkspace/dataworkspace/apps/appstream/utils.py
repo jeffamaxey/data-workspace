@@ -17,18 +17,16 @@ def connect_aws_client(aws_service):
 def get_fleet_status():
     client = connect_aws_client("appstream")
 
-    fleet_status = client.describe_fleets(Names=[settings.APPSTREAM_FLEET_NAME])
-    return fleet_status
+    return client.describe_fleets(Names=[settings.APPSTREAM_FLEET_NAME])
 
 
 def get_app_sessions():
     client = connect_aws_client("appstream")
 
-    app_sessions = client.describe_sessions(
-        StackName=settings.APPSTREAM_STACK_NAME, FleetName=settings.APPSTREAM_FLEET_NAME
+    return client.describe_sessions(
+        StackName=settings.APPSTREAM_STACK_NAME,
+        FleetName=settings.APPSTREAM_FLEET_NAME,
     )
-
-    return app_sessions
 
 
 def scale_fleet(min_capacity, max_capacity):
@@ -36,7 +34,7 @@ def scale_fleet(min_capacity, max_capacity):
 
     scale_response = client.register_scalable_target(
         ServiceNamespace="appstream",
-        ResourceId="fleet/" + settings.APPSTREAM_FLEET_NAME,
+        ResourceId=f"fleet/{settings.APPSTREAM_FLEET_NAME}",
         ScalableDimension="appstream:fleet:DesiredCapacity",
         MinCapacity=min_capacity,
         MaxCapacity=max_capacity,
@@ -50,7 +48,7 @@ def get_fleet_scale():
 
     scale_response = client.describe_scalable_targets(
         ServiceNamespace="appstream",
-        ResourceIds=["fleet/" + settings.APPSTREAM_FLEET_NAME],
+        ResourceIds=[f"fleet/{settings.APPSTREAM_FLEET_NAME}"],
         ScalableDimension="appstream:fleet:DesiredCapacity",
     )
 

@@ -71,7 +71,9 @@ def _export(request, querylog, download=True):
 
     response = HttpResponse(output, content_type=exporter.content_type)
     if download:
-        response["Content-Disposition"] = 'attachment; filename="%s"' % (exporter.get_filename())
+        response[
+            "Content-Disposition"
+        ] = f'attachment; filename="{exporter.get_filename()}"'
     return response
 
 
@@ -83,7 +85,7 @@ class DownloadFromQuerylogView(View):
             return _export(request, querylog)
         except DatabaseError:
             redirect_url = reverse("explorer:index")
-            return redirect(redirect_url + f"?querylog_id={querylog.id}&error=download")
+            return redirect(f"{redirect_url}?querylog_id={querylog.id}&error=download")
 
 
 class ListQueryView(ListView):
@@ -142,19 +144,17 @@ class CreateQueryView(CreateView):
     def get_initial(self):
         data = super().get_initial()
 
-        play_sql = get_playground_sql_from_request(self.request)
-        if play_sql:
+        if play_sql := get_playground_sql_from_request(self.request):
             data["sql"] = play_sql.sql
 
         return data
 
     def get(self, request, *args, **kwargs):
-        extra_context = {}
-
         play_sql = get_playground_sql_from_request(request)
-        extra_context["disable_sql"] = True
-        extra_context["backlink"] = reverse("explorer:index") + f"?play_id={play_sql.id}"
-
+        extra_context = {
+            "disable_sql": True,
+            "backlink": reverse("explorer:index") + f"?play_id={play_sql.id}",
+        }
         extra_context["form_action"] = request.get_full_path()
 
         response = super().get(request, *args, **kwargs)
@@ -175,7 +175,7 @@ class CreateQueryView(CreateView):
 
             redirect_url = reverse("explorer:index")
 
-            return redirect(redirect_url + f"?play_id={play_sql.id}")
+            return redirect(f"{redirect_url}?play_id={play_sql.id}")
 
         if action == "save":
             ret = super().post(request)
@@ -253,8 +253,7 @@ class PlayQueryView(View):
 
         initial_data = {"sql": request.GET.get("sql")}
 
-        play_sql = get_playground_sql_from_request(request)
-        if play_sql:
+        if play_sql := get_playground_sql_from_request(request):
             initial_data["sql"] = play_sql.sql
 
         schema, tables_columns = get_user_schema_info(request)
@@ -297,7 +296,7 @@ class PlayQueryView(View):
                 redirect_url = reverse("explorer:query_create")
 
             query_params = (("play_id", play_sql.id),)
-            return redirect(redirect_url + f"?{urlencode(query_params)}")
+            return redirect(f"{redirect_url}?{urlencode(query_params)}")
 
         elif action == "run":
             query.params = url_get_params(request)
@@ -331,7 +330,7 @@ class PlayQueryView(View):
 
         form_action = request.path
         if form_action_params:
-            form_action += "?" + form_action_params
+            form_action += f"?{form_action_params}"
 
         return form_action
 
@@ -353,10 +352,8 @@ class PlayQueryView(View):
         if request.method == "GET":
             if request.GET.get("sql"):
                 form.initial["sql"] = request.GET.get("sql")
-            else:
-                play_sql = get_playground_sql_from_request(request)
-                if play_sql:
-                    form.initial["sql"] = play_sql.sql
+            elif play_sql := get_playground_sql_from_request(request):
+                form.initial["sql"] = play_sql.sql
 
         context = query_viewmodel(
             request,
@@ -442,8 +439,7 @@ class QueryView(View):
     def get_edit_sql_url(request, query):
         query_params = (("query_id", query.id),)
 
-        play_sql = get_playground_sql_from_request(request)
-        if play_sql:
+        if play_sql := get_playground_sql_from_request(request):
             query_params = query_params + (("play_id", play_sql.id),)
 
         return reverse("explorer:index") + f"?{urlencode(query_params)}"
@@ -636,8 +632,7 @@ class RunningQueryView(View):
     def get(self, request, query_log_id):
         query_log = get_object_or_404(QueryLog, pk=query_log_id, run_by_user=self.request.user)
         query_instance = None
-        query_id = url_get_query_id(request)
-        if query_id:
+        if query_id := url_get_query_id(request):
             query_instance = get_object_or_404(
                 Query, pk=query_id, created_by_user=self.request.user
             )

@@ -86,17 +86,13 @@ class ApplicationInstanceAdmin(admin.ModelAdmin):
     max_cpu.short_description = "Max recent CPU"
 
     def get_form(self, request, obj=None, change=False, **kwargs):
-        kwargs.update(
-            {
-                "help_texts": {
-                    "max_cpu": (
-                        "The highest CPU usage in the past two hours."
-                        "The application will be stopped automatically "
-                        "if the usage is less than 1% for two hours."
-                    )
-                }
-            }
-        )
+        kwargs["help_texts"] = {
+            "max_cpu": (
+                "The highest CPU usage in the past two hours."
+                "The application will be stopped automatically "
+                "if the usage is less than 1% for two hours."
+            )
+        }
         return super().get_form(request, obj, change, **kwargs)
 
 
@@ -243,9 +239,9 @@ class ApplicationInstanceReportAdmin(admin.ModelAdmin):
         )
 
         def group_by_user_missing_rows():
-            users_with_applications = set(
+            users_with_applications = {
                 item["owner__username"] for item in summary_with_applications
-            )
+            }
             return [
                 {
                     "owner__username": user.username,
@@ -262,9 +258,10 @@ class ApplicationInstanceReportAdmin(admin.ModelAdmin):
             application_templates = list(
                 ApplicationTemplate.objects.filter(**app_filter).order_by("nice_name")
             )
-            applications_run = set(
-                item["application_template__nice_name"] for item in summary_with_applications
-            )
+            applications_run = {
+                item["application_template__nice_name"]
+                for item in summary_with_applications
+            }
             return [
                 {
                     "owner__username": None,
@@ -278,9 +275,10 @@ class ApplicationInstanceReportAdmin(admin.ModelAdmin):
             ]
 
         def group_by_cpu_memory_missing_rows():
-            launched_cpu_memory_combos = set(
-                (item["spawner_cpu"], item["spawner_memory"]) for item in summary_with_applications
-            )
+            launched_cpu_memory_combos = {
+                (item["spawner_cpu"], item["spawner_memory"])
+                for item in summary_with_applications
+            }
             return [
                 {
                     "spawner_cpu": cpu,
@@ -294,10 +292,14 @@ class ApplicationInstanceReportAdmin(admin.ModelAdmin):
             ]
 
         def group_by_user_cpu_memory_missing_rows():
-            users_with_applications = set(
-                (item["owner__username"], item["spawner_cpu"], item["spawner_memory"])
+            users_with_applications = {
+                (
+                    item["owner__username"],
+                    item["spawner_cpu"],
+                    item["spawner_memory"],
+                )
                 for item in summary_with_applications
-            )
+            }
             return [
                 {
                     "owner__username": user.username,
@@ -315,10 +317,10 @@ class ApplicationInstanceReportAdmin(admin.ModelAdmin):
             application_templates = list(
                 ApplicationTemplate.objects.filter(**app_filter).order_by("nice_name")
             )
-            users_with_applications = set(
+            users_with_applications = {
                 (item["owner__username"], item["application_template__nice_name"])
                 for item in summary_with_applications
-            )
+            }
             return [
                 {
                     "owner__username": user.username,

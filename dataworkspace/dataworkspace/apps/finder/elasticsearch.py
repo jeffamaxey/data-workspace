@@ -130,8 +130,9 @@ class ElasticsearchClient:
         return sorted(results, key=lambda x: -x.count)
 
     def get_count(self, phrase, index_alias, filters: Tuple[Tuple[str, Any]] = None):
-        matches = self.search_for_phrase(phrase, [index_alias], filters=filters)
-        if matches:
+        if matches := self.search_for_phrase(
+            phrase, [index_alias], filters=filters
+        ):
             return matches[0].count
         return 0
 

@@ -53,7 +53,7 @@ def ec2_request(query):
             + hashlib.sha256(canonical_request().encode("utf-8")).hexdigest()
         )
 
-        date_key = sign(("AWS4" + secret_access_key).encode("utf-8"), datestamp)
+        date_key = sign(f"AWS4{secret_access_key}".encode("utf-8"), datestamp)
         region_key = sign(date_key, aws_region)
         service_key = sign(region_key, "ec2")
         request_key = sign(service_key, "aws4_request")

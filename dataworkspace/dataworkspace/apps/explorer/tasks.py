@@ -127,7 +127,9 @@ def _run_querylog_query(query_log_id, page, limit, timeout):
             # query results. The prefixes are removed when the results are returned.
             cursor.execute(f"SELECT * FROM ({sql}) sq LIMIT 0")
             column_names = list(zip(*cursor.description))[0]
-            duplicated_column_names = set(c for c in column_names if column_names.count(c) > 1)
+            duplicated_column_names = {
+                c for c in column_names if column_names.count(c) > 1
+            }
             prefixed_sql_columns = [
                 (
                     f'"{_prefix_column(i, col[0]) if col[0] in duplicated_column_names else col[0]}" '
@@ -136,10 +138,7 @@ def _run_querylog_query(query_log_id, page, limit, timeout):
                 for i, col in enumerate(cursor.description, 1)
             ]
             cursor.execute(f'CREATE TABLE {table_name} ({", ".join(prefixed_sql_columns)})')
-            offset = ""
-            if page and page > 1:
-                offset = f" OFFSET {(page - 1) * limit}"
-
+            offset = f" OFFSET {(page - 1) * limit}" if page and page > 1 else ""
             cursor.execute(
                 f"INSERT INTO {table_name} SELECT * FROM ({sql}) sq LIMIT {limit}{offset}"
             )

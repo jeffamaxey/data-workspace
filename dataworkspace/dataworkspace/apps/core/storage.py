@@ -35,9 +35,7 @@ def _upload_to_clamav(file: File) -> ClamAVResponse:
     response = requests.post(clamav_url, auth=(clamav_user, clamav_password), files={"file": file})
     response.raise_for_status()
 
-    clamav_response = ClamAVResponse(response.json())
-
-    return clamav_response
+    return ClamAVResponse(response.json())
 
 
 class S3FileStorage(FileSystemStorage):
@@ -84,7 +82,7 @@ class S3FileStorage(FileSystemStorage):
             )
         except ClientError as ex:
             # pylint: disable=raise-missing-from
-            raise Exception("Error saving file: {}".format(ex.response["Error"]["Message"]))
+            raise Exception(f'Error saving file: {ex.response["Error"]["Message"]}')
 
         return filename
 

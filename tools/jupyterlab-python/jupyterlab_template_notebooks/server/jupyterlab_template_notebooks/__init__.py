@@ -32,11 +32,11 @@ class TemplateListHandler(IPythonHandler):
             {
                 "templates": [
                     {
-                        "path": "/templates/" + PurePosixPath(path).name,
+                        "path": f"/templates/{PurePosixPath(path).name}",
                         "name": PurePosixPath(path).name,
                     }
                     for path in glob(
-                        str(PurePosixPath(os.path.realpath(__file__)).parent) + "/*.ipynb"
+                        f"{str(PurePosixPath(os.path.realpath(__file__)).parent)}/*.ipynb"
                     )
                 ]
             }

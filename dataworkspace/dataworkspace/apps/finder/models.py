@@ -11,8 +11,4 @@ class DatasetFinderQueryLog(models.Model):
     )
 
     def __str__(self):
-        return "{} – {} – {}".format(
-            self.timestamp,
-            self.user.get_full_name(),  # pylint: disable=no-member
-            self.query,
-        )
+        return f"{self.timestamp} – {self.user.get_full_name()} – {self.query}"

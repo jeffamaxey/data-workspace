@@ -56,20 +56,19 @@ class HomePage(_BaseExplorerPage):
     def read_result_rows(self):
         doc = html.fromstring(self.get_html())
 
-        results = []
         rows = doc.xpath(
             "//div[contains(@class, 'scrollable-table')]//tr[contains(@class, 'govuk-table__row')]"
         )
 
-        for row in rows[1:]:  # Drop the header row out
-            results.append(
-                [
-                    cell.text.strip()
-                    for cell in row.xpath(".//td[contains(@class, 'govuk-table__cell')]//pre")
-                ]
-            )
-
-        return results
+        return [
+            [
+                cell.text.strip()
+                for cell in row.xpath(
+                    ".//td[contains(@class, 'govuk-table__cell')]//pre"
+                )
+            ]
+            for row in rows[1:]
+        ]
 
     def read_sql(self):
         textarea = self._driver.find_element_by_id("original-sql")
@@ -133,9 +132,7 @@ class QueryDetailPage(_BaseExplorerPage):
     def click_edit(self):
         self._submit("Edit SQL")
 
-        home_page = HomePage(driver=self._driver, base_url=self._base_url)
-
-        return home_page
+        return HomePage(driver=self._driver, base_url=self._base_url)
 
 
 class QueryLogPage(_BaseExplorerPage):

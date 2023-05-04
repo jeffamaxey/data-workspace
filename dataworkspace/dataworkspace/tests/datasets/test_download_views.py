@@ -243,7 +243,7 @@ class TestDatasetViews:
                 "reference_dataset": rds,
                 field1.column_name: 1,
                 field2.column_name: "Test record",
-                field3.relationship_name + "_id": link_record.id,
+                f"{field3.relationship_name}_id": link_record.id,
             },
         )
         rec2 = rds.save_record(
@@ -346,7 +346,7 @@ class TestDatasetViews:
                 "reference_dataset": rds,
                 field1.column_name: 1,
                 field2.column_name: "Test record",
-                field3.relationship_name + "_id": link_record.id,
+                f"{field3.relationship_name}_id": link_record.id,
             },
         )
         rec2 = rds.save_record(

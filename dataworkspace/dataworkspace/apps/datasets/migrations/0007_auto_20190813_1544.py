@@ -6,7 +6,7 @@ from django.db import migrations
 def generate_column_name(apps, _):
     model = apps.get_model("datasets", "ReferenceDatasetField")
     for field in model.objects.all():
-        field.column_name = "field_{}".format(field.id)
+        field.column_name = f"field_{field.id}"
         field.save()
 
 

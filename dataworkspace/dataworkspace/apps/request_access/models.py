@@ -40,7 +40,7 @@ class AccessRequest(TimeStampedModel):
             return self.JOURNEY_TOOLS_ACCESS
         elif self.contact_email and not self.training_screenshot:
             return self.JOURNEY_DATASET_ACCESS
-        elif self.contact_email and self.training_screenshot:
+        elif self.contact_email:
             return self.JOURNEY_DATASET_AND_TOOLS_ACCESS
         return None
 

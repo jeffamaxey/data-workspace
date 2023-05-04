@@ -19,9 +19,12 @@ class TestFilterWidget:
     def test_limit_initial_choices(
         self, num_choices, limit_options, expect_show_more_button, expect_hidden_choices
     ):
+
+
+
         class _Form(forms.Form):
             field = forms.MultipleChoiceField(
-                choices=list((i, i) for i in range(num_choices)),
+                choices=[(i, i) for i in range(num_choices)],
                 required=False,
                 widget=FilterWidget(
                     "Field",
@@ -29,6 +32,7 @@ class TestFilterWidget:
                     show_more_label="Show more choices",
                 ),
             )
+
 
         html = Template("{{ form }}").render(Context({"form": _Form()}))
         soup = BeautifulSoup(html)

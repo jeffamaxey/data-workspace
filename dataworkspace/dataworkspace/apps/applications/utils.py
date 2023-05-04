@@ -113,13 +113,13 @@ def application_template_tag_user_commit_from_host(public_host):
     )
 
     matching_visualisations = (
-        list(
+        []
+        if user
+        else list(
             ApplicationTemplate.objects.filter(
                 application_type="VISUALISATION", host_basename=host_basename
             )
         )
-        if not user
-        else []
     )
 
     matching = matching_tools + matching_visualisations
@@ -266,7 +266,7 @@ def application_instance_max_cpu(application_instance):
     if application_instance.proxy_url is None:
         raise ExpectedMetricsException("Unknown")
 
-    instance = urllib.parse.urlsplit(application_instance.proxy_url).hostname + ":8889"
+    instance = f"{urllib.parse.urlsplit(application_instance.proxy_url).hostname}:8889"
     url = f"https://{settings.PROMETHEUS_DOMAIN}/api/v1/query"
     params = {
         "query": f'increase(precpu_stats__cpu_usage__total_usage{{instance="{instance}"}}[30s])[2h:30s]'
@@ -659,14 +659,13 @@ def get_quicksight_dashboard_name_url(dashboard_id, user):
             break
 
         except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "ResourceNotFoundException":
-                if attempts > 0:
-                    gevent.sleep(5 - attempts)
-                else:
-                    raise e
-            else:
+            if e.response["Error"]["Code"] != "ResourceNotFoundException":
                 raise e
 
+            if attempts > 0:
+                gevent.sleep(5 - attempts)
+            else:
+                raise e
     dashboard_name = qs_dashboard_client.describe_dashboard(
         AwsAccountId=account_id, DashboardId=dashboard_id, AliasName="$PUBLISHED"
     )["Dashboard"]["Name"]
@@ -747,13 +746,12 @@ def create_update_delete_quicksight_user_data_sources(
             logger.info("-> Created: %s", data_source_id)
 
         except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "ResourceExistsException":
-                logger.info("-> Data source already exists: %s. Updating ...", data_source_id)
-                data_client.update_data_source(**create_and_update_params)
-                logger.info("-> Updated data source: %s", data_source_id)
-
-            else:
+            if e.response["Error"]["Code"] != "ResourceExistsException":
                 raise e
+
+            logger.info("-> Data source already exists: %s. Updating ...", data_source_id)
+            data_client.update_data_source(**create_and_update_params)
+            logger.info("-> Updated data source: %s", data_source_id)
 
         authorized_data_source_ids.add(data_source_id)
 
@@ -774,10 +772,7 @@ def create_update_delete_quicksight_user_data_sources(
                 AwsAccountId=account_id, DataSourceId=unauthorized_data_source_id
             )
         except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "ResourceNotFoundException":
-                pass
-
-            else:
+            if e.response["Error"]["Code"] != "ResourceNotFoundException":
                 raise e
 
 
@@ -1391,28 +1386,29 @@ def _send_slack_message(text):
 @celery_app.task()
 @close_all_connections_if_not_in_atomic_block
 def long_running_query_alert():
-    if waffle.switch_is_active("enable_long_running_query_alerts"):
-        interval = settings.LONG_RUNNING_QUERY_ALERT_THRESHOLD
-        logger.info("Checking for queries running longer than %s on the datasets db.", interval)
-        with connections[settings.EXPLORER_DEFAULT_CONNECTION].cursor() as cursor:
-            cursor.execute(
-                """
+    if not waffle.switch_is_active("enable_long_running_query_alerts"):
+        return
+    interval = settings.LONG_RUNNING_QUERY_ALERT_THRESHOLD
+    logger.info("Checking for queries running longer than %s on the datasets db.", interval)
+    with connections[settings.EXPLORER_DEFAULT_CONNECTION].cursor() as cursor:
+        cursor.execute(
+            """
                 SELECT COUNT(*)
                 FROM pg_stat_activity
                 WHERE (now() - pg_stat_activity.query_start) > interval '{interval}'
                 AND state = 'active'
                 """
+        )
+        query_count = int(cursor.fetchone()[0])
+        if query_count > 0:
+            message = (
+                f':rotating_light: Found {query_count} SQL quer{"y" if query_count == 1 else "ies"}'
+                f" running for longer than {interval} on the datasets db."
             )
-            query_count = int(cursor.fetchone()[0])
-            if query_count > 0:
-                message = (
-                    f':rotating_light: Found {query_count} SQL quer{"y" if query_count == 1 else "ies"}'
-                    f" running for longer than {interval} on the datasets db."
-                )
-                logger.info(message)
-                _send_slack_message(message)
-            else:
-                logger.info("No long running queries found.")
+            logger.info(message)
+            _send_slack_message(message)
+        else:
+            logger.info("No long running queries found.")
 
 
 @celery_app.task()
@@ -1439,17 +1435,11 @@ def push_tool_monitoring_dashboard_datasets():
 
         # Create dataset
         payload = {"fields": {"count": {"type": "number", "name": "Count"}}}
-        session.put(
-            geckoboard_endpoint + "tools.running",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.running", json=payload)
 
         # Add data
         payload = {"data": [{"count": len(running_tasks)}]}
-        session.put(
-            geckoboard_endpoint + "tools.running/data",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.running/data", json=payload)
 
     def report_failed_tools(client, session):
 
@@ -1472,10 +1462,7 @@ def push_tool_monitoring_dashboard_datasets():
                 "stopped_reason": {"type": "string", "name": "Reason"},
             }
         }
-        session.put(
-            geckoboard_endpoint + "tools.failed",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.failed", json=payload)
 
         # Add data
         payload = {
@@ -1492,10 +1479,7 @@ def push_tool_monitoring_dashboard_datasets():
                 if t["stoppedReason"] != "Task stopped by user"
             ]
         }
-        session.put(
-            geckoboard_endpoint + "tools.failed/data",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.failed/data", json=payload)
 
     def report_tool_average_start_times(client, session):
 
@@ -1520,10 +1504,7 @@ def push_tool_monitoring_dashboard_datasets():
                 "hour_of_day": {"type": "string", "name": "Hour"},
             }
         }
-        session.put(
-            geckoboard_endpoint + "tools.durations",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.durations", json=payload)
 
         # Add data
         payload = {
@@ -1548,10 +1529,7 @@ def push_tool_monitoring_dashboard_datasets():
                     }
                 )
 
-        session.put(
-            geckoboard_endpoint + "tools.durations/data",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.durations/data", json=payload)
 
     def report_recent_tool_start_times(client, session):
 
@@ -1578,10 +1556,7 @@ def push_tool_monitoring_dashboard_datasets():
                 },
             }
         }
-        session.put(
-            geckoboard_endpoint + "tools.recent",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.recent", json=payload)
 
         # Add data
         payload = {
@@ -1598,10 +1573,7 @@ def push_tool_monitoring_dashboard_datasets():
             ]
         }
 
-        session.put(
-            geckoboard_endpoint + "tools.recent/data",
-            json=payload,
-        )
+        session.put(f"{geckoboard_endpoint}tools.recent/data", json=payload)
 
     client = boto3.client("ecs")
 

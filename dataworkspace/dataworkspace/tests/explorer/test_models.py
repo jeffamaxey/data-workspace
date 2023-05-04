@@ -56,7 +56,7 @@ class TestQueryModel:
 
 class TestParams(TestCase):
     def test_swappable_params_are_built_correctly(self):
-        expected = EXPLORER_PARAM_TOKEN + "foo" + EXPLORER_PARAM_TOKEN
+        expected = f"{EXPLORER_PARAM_TOKEN}foo{EXPLORER_PARAM_TOKEN}"
         self.assertEqual(expected, param("foo"))
 
     def test_params_get_swapped(self):

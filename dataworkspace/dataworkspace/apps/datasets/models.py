@@ -286,9 +286,9 @@ class DataSet(DeletableTimestampedUserModel):
 
         acronyms = []
         for pairing in GRID_ACRONYM_MAP:
-            if re.search(r"\b{}\b".format(pairing[1]), self.description, re.I) is not None:
+            if re.search(f"\b{pairing[1]}\b", self.description, re.I) is not None:
                 acronyms.append(pairing[0])
-            if re.search(r"\b{}\b".format(pairing[0]), self.description, re.I) is not None:
+            if re.search(f"\b{pairing[0]}\b", self.description, re.I) is not None:
                 acronyms.append(pairing[1])
 
         self.acronyms = " ".join(acronyms)
@@ -327,7 +327,10 @@ class DataSet(DeletableTimestampedUserModel):
         ]
         related = []
         for related_field in RELATED_FIELDS:
-            related += [copy.copy(obj) for obj in getattr(self, related_field + "_set").all()]
+            related += [
+                copy.copy(obj)
+                for obj in getattr(self, f"{related_field}_set").all()
+            ]
         return related
 
     def related_datasets(self, order=None):
@@ -338,7 +341,7 @@ class DataSet(DeletableTimestampedUserModel):
             for query in custom_queries:
                 query_tables.extend([qt.table for qt in query.tables.all()])
 
-            ds_tables = [
+            return [
                 row.dataset
                 for row in SourceTable.objects.filter(
                     dataset__published=True,
@@ -350,9 +353,6 @@ class DataSet(DeletableTimestampedUserModel):
                 .distinct("dataset")
                 .order_by("dataset", order or "dataset__name")
             ]
-
-            return ds_tables
-
         elif self.type == DataSetType.MASTER:
             tables = self.sourcetable_set.all()
 
@@ -364,16 +364,13 @@ class DataSet(DeletableTimestampedUserModel):
             else:
                 filters = Q()
 
-            datacuts = [
+            return [
                 row.query.dataset
                 for row in CustomDatasetQueryTable.objects.filter(filters)
                 .only("query__dataset")
                 .distinct("query__dataset")
                 .order_by("query__dataset", order or "query__dataset__name")
             ]
-
-            return datacuts
-
         else:
             raise ValueError(f"Not implemented for {self.type}")
 
@@ -932,18 +929,14 @@ class CustomDatasetQuery(ReferenceNumberedDatasetSource):
         return True
 
     def can_show_link_for_user(self, user):
-        if user.is_superuser:
-            return True
-
-        return self.reviewed
+        return True if user.is_superuser else self.reviewed
 
     @property
     def type(self):
         return DataLinkType.CUSTOM_QUERY
 
     def get_data_last_updated_date(self):
-        tables = CustomDatasetQueryTable.objects.filter(query=self)
-        if tables:
+        if tables := CustomDatasetQueryTable.objects.filter(query=self):
             return get_tables_last_updated_date(
                 self.database.memorable_name,
                 tuple((table.schema, table.table) for table in tables),
@@ -969,9 +962,7 @@ class CustomDatasetQuery(ReferenceNumberedDatasetSource):
                 sample_size,
             )
             for row in rows:
-                record_data = {}
-                for i, column in enumerate(columns):
-                    record_data[column] = row[i]
+                record_data = {column: row[i] for i, column in enumerate(columns)}
                 records.append(record_data)
         return columns, records
 
@@ -990,21 +981,19 @@ class CustomDatasetQuery(ReferenceNumberedDatasetSource):
         """
         Return column configuration for the query in the format expected by ag-grid.
         """
-        col_defs = []
-        for column in datasets_db.get_columns(
-            self.database.memorable_name,
-            query=self.cleaned_query,
-            include_types=True,
-        ):
-            col_defs.append(
-                {
-                    "field": column[0],
-                    "filter": True,
-                    "sortable": True,
-                    "dataType": GRID_DATA_TYPE_MAP.get(column[1], column[1]),
-                }
+        return [
+            {
+                "field": column[0],
+                "filter": True,
+                "sortable": True,
+                "dataType": GRID_DATA_TYPE_MAP.get(column[1], column[1]),
+            }
+            for column in datasets_db.get_columns(
+                self.database.memorable_name,
+                query=self.cleaned_query,
+                include_types=True,
             )
-        return col_defs
+        ]
 
     @property
     def data_grid_download_enabled(self):
@@ -1234,7 +1223,7 @@ class ReferenceDataset(DeletableTimestampedUserModel):
         if linking_fields.count() > 0:
             raise ProtectedError(
                 "Cannot delete reference dataset as it is linked to by other datasets",
-                set(x.reference_dataset for x in linking_fields),
+                {x.reference_dataset for x in linking_fields},
             )
 
         # Delete external table when ref dataset is deleted
@@ -1333,11 +1322,11 @@ class ReferenceDataset(DeletableTimestampedUserModel):
 
     @property
     def version(self):
-        return "{}.{}".format(self.major_version, self.minor_version)
+        return f"{self.major_version}.{self.minor_version}"
 
     @property
     def published_version(self):
-        return "{}.{}".format(self.published_major_version, self.published_minor_version)
+        return f"{self.published_major_version}.{self.published_minor_version}"
 
     @property
     def record_sort_order(self):
@@ -1352,10 +1341,7 @@ class ReferenceDataset(DeletableTimestampedUserModel):
             field = self.sort_field
             order = field.column_name
             if field.data_type == field.DATA_TYPE_FOREIGN_KEY:
-                order = "{}__{}".format(
-                    field.relationship_name,
-                    field.linked_reference_dataset_field.column_name,
-                )
+                order = f"{field.relationship_name}__{field.linked_reference_dataset_field.column_name}"
         return ["".join([prefix, order])]
 
     def get_record_model_class(self) -> object:
@@ -1811,7 +1797,7 @@ class ReferenceDatasetField(TimeStampedUserModel):
         self._original_column_name = self.column_name
 
     def __str__(self):
-        return "{}: {}".format(self.reference_dataset.name, self.name)
+        return f"{self.reference_dataset.name}: {self.name}"
 
     def _add_column_to_db(self):
         """
@@ -1944,16 +1930,13 @@ class ReferenceDatasetField(TimeStampedUserModel):
                         model_class,
                         model_class._meta.get_field(self._original_column_name),
                     )
-                else:
-                    # Don't delete the relationship if there are other fields still referencing it
-                    if (
-                        self.reference_dataset.fields.filter(
-                            relationship_name=self.relationship_name
-                        )
-                        .exclude(id=self.id)
-                        .count()
-                    ):
-                        continue
+                elif not (
+                    self.reference_dataset.fields.filter(
+                        relationship_name=self.relationship_name
+                    )
+                    .exclude(id=self.id)
+                    .count()
+                ):
                     editor.remove_field(
                         model_class,
                         model_class._meta.get_field(self.relationship_name),
@@ -2017,15 +2000,13 @@ class ReferenceDatasetField(TimeStampedUserModel):
             "max_length": 255,
         }
         if self.data_type == self.DATA_TYPE_FOREIGN_KEY:
-            model_config.update(
-                {
-                    "verbose_name": "Linked Reference Dataset field",
-                    "to": self.linked_reference_dataset_field.reference_dataset.get_record_model_class(),
-                    "on_delete": models.DO_NOTHING,
-                }
-            )
+            model_config |= {
+                "verbose_name": "Linked Reference Dataset field",
+                "to": self.linked_reference_dataset_field.reference_dataset.get_record_model_class(),
+                "on_delete": models.DO_NOTHING,
+            }
         elif self.data_type == self.DATA_TYPE_UUID:
-            model_config.update({"default": uuid.uuid4, "editable": False})
+            model_config |= {"default": uuid.uuid4, "editable": False}
         return model_field(**model_config)
 
     @property
@@ -2041,10 +2022,7 @@ class ReferenceDatasetField(TimeStampedUserModel):
         if self.data_type != self.DATA_TYPE_FOREIGN_KEY:
             return None
 
-        if ":" in self.name:
-            # pylint: disable=use-maxsplit-arg
-            return self.name.split(":")[0]
-        return self.relationship_name
+        return self.name.split(":")[0] if ":" in self.name else self.relationship_name
 
 
 class ReferenceDatasetUploadLog(TimeStampedUserModel):
@@ -2083,7 +2061,7 @@ class ReferenceDatasetUploadLogRecord(TimeStampedModel):
         ordering = ("created_date",)
 
     def __str__(self):
-        return "{}: {}".format(self.created_date, self.get_status_display())
+        return f"{self.created_date}: {self.get_status_display()}"
 
 
 class VisualisationCatalogueItem(DeletableTimestampedUserModel):

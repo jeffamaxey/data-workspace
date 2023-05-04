@@ -66,7 +66,7 @@ class DatasetAccessRequest(CreateView):
             return HttpResponseRedirect(
                 reverse("request-access:tools-1", kwargs={"pk": access_request.pk})
             )
-        elif user_has_dataset_access and user_has_tools_access:
+        elif user_has_dataset_access:
             return render(request, "request_access/you_have_access.html")
         return super().dispatch(request, *args, **kwargs)
 
